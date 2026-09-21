@@ -35,6 +35,10 @@ Run this sequence continuously during active implementation:
    - Re-evaluate milestone gate checklist.
    - If all pass, sign off milestone and move to next.
 
+7. **Commit**
+   - If files changed in this loop pass, create a git commit immediately.
+   - Use the required commit message format from `master-kickoff.md`.
+
 ## Daily output format
 
 At each loop pass, output:
@@ -44,7 +48,8 @@ At each loop pass, output:
 3. Newly dispatched tasks
 4. Reviews completed + decisions
 5. Blockers and owners
-6. Next 1-3 actions
+6. Commit made (yes/no + commit title)
+7. Next 1-3 actions
 
 ## Token-efficiency rules
 
@@ -56,3 +61,4 @@ At each loop pass, output:
 ## Non-negotiable
 
 Master does not implement code.
+Master commits orchestration changes after each completed step.

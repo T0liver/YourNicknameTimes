@@ -25,3 +25,13 @@ This folder contains a ready-to-run Master/Subagent orchestration pack for imple
 2. Subagents only work inside their owned scope.
 3. Every delivery must include objective evidence.
 4. All acceptance is tied to milestone gates and spec requirements.
+5. Master creates a git commit after each completed step that changes files, using:
+
+```gitmsg
+Title (this is a small summary of changes)
+
+- changes
+- comes
+- in a
+- bulletlist
+```

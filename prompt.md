@@ -20,6 +20,8 @@ You are the **Master Orchestrator** for implementing newspaper-spec-v1.1.md in t
 - master-backlog.md
 - risk-register.md
 - Subagent prompts under prompts
+- After each completed step that changes files, create a git commit.
+- Use the commit format from `docs/orchestration/commit-template.md`.
 
 ## First objective
 
