@@ -29,6 +29,7 @@ Use this register to track delivery, architecture, integration, and operational 
 | R-008 | Delivery/Cloud | Dropbox auth token refresh or upload failures reduce reliability | Medium | Medium | Agent D | Implement refresh/retry/error surfacing + re-upload action | Keep print path independent; manual upload fallback | 3+ consecutive upload failures | M3 end | open |  |
 | R-009 | Project/Coordination | Multi-agent contract drift causes integration delays | High | Medium | Master | Version interface contracts + strict review gates | Pause dispatch and run contract alignment checkpoint | Rework loops increase across tasks | continuous | open |  |
 | R-010 | Content/License | Name-day or historical source licensing unclear | Medium | Low | Agent B / Master | Record source/license decision during M2 | Disable unresolved item toggle by default | Missing verifiable license metadata | M2 end | open |  |
+| R-011 | Delivery/Evidence | M0 smoke submissions may omit objective command output or failure-path checks, blocking gate acceptance | Medium | Medium | Master | Enforce contract return format + checkpoint reminders + scorecard evidence gate before in_review | Immediate focused rework request using master-rework-policy.md | Submission missing changed files/evidence/failure checks/limitations/handoff | M0 end | open | 2026-09-22 |
 
 ## Review routine
 

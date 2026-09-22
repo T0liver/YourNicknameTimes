@@ -21,9 +21,9 @@ Use this as the central tracking board for the Master agent.
 
 | Task ID | Milestone | Wave | Owner | Scope summary | Depends on | Priority | Status | Evidence links | Last update |
 |---|---|---|---|---|---|---|---|---|---|
-| M0-A-PLATFORM-SMOKE | M0 | W1 | Agent A | Platform prereqs, CUPS baseline, service scaffolding | none | P0 | not_started |  |  |
-| M0-B-DATA-SMOKE | M0 | W1 | Agent B | CalDAV listing + source adapter smoke checks | none | P0 | not_started |  |  |
-| M0-D-DELIVERY-SMOKE | M0 | W1 | Agent D | OpenRouter test path support + Dropbox app-folder upload smoke | none | P0 | not_started |  |  |
+| M0-A-PLATFORM-SMOKE | M0 | W1 | Agent A | Platform prereqs, CUPS baseline, service scaffolding | none | P0 | in_progress | dispatch prepared: docs/orchestration/dispatches/M0-A-PLATFORM-SMOKE-W1.md | 2026-09-22 |
+| M0-B-DATA-SMOKE | M0 | W1 | Agent B | CalDAV listing + source adapter smoke checks | none | P0 | in_progress | dispatch prepared: docs/orchestration/dispatches/M0-B-DATA-SMOKE-W1.md | 2026-09-22 |
+| M0-D-DELIVERY-SMOKE | M0 | W1 | Agent D | OpenRouter test path support + Dropbox app-folder upload smoke | none | P0 | in_progress | dispatch prepared: docs/orchestration/dispatches/M0-D-DELIVERY-SMOKE-W1.md | 2026-09-22 |
 | M1-C-LAYOUT-BOOTSTRAP | M1 | W1 | Agent C | Static edition composition with fake HU data | M0-A-PLATFORM-SMOKE, M0-B-DATA-SMOKE | P1 | not_started |  |  |
 | M1-D-A4-RENDER | M1 | W2 | Agent D | One-page A4 render path and print-fit verification | M1-C-LAYOUT-BOOTSTRAP | P0 | not_started |  |  |
 | M2-B-FULL-SOURCES | M2 | W3 | Agent B | Deterministic full source integrations and normalization | M0-B-DATA-SMOKE | P0 | not_started |  |  |
