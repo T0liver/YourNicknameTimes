@@ -20,6 +20,12 @@ Use this log to capture reusable workflow and methodology observations.
 - **Potential skill impact:** Require `*_set=yes/no` preflight evidence in smoke-task returns before attempting live success-path checks.
 - **Status:** OPEN
 
+### Observation 4: Cross-host evidence tasks need a single copy-paste runner command
+- **Context:** M1-D requires Pi-specific rendering and printer checks while implementation happens in a different workspace host.
+- **Observation:** Delivering one end-to-end command (with interpreter fallback) reduces iteration time and avoids partial/misaligned evidence capture.
+- **Potential skill impact:** For hardware-bound milestones, always provide one canonical command that generates the full evidence artifact in one run.
+- **Status:** OPEN
+
 ### Observation 4: Separate implementation acceptance from gate acceptance
 - **Context:** M0-B delivered strong implementation evidence but lacked live Baikal success proof.
 - **Observation:** Using `in_review` + conditional acceptance keeps momentum while clearly preventing premature milestone gate closure.
@@ -36,4 +42,10 @@ Use this log to capture reusable workflow and methodology observations.
 - **Context:** M1 kickoff preparation required immediate launch and one dependency-gated launch.
 - **Observation:** Keeping a single starter-prompts file with copy/paste launch text and attachment lists prevents message drift and speeds manager response time.
 - **Potential skill impact:** Standardize `<milestone>-starter-prompts.md` as part of each wave dispatch artifact set.
+- **Status:** OPEN
+
+### Observation 7: Dependency-gated prompt text prevents premature starts
+- **Context:** M2 planning includes one immediate dispatch (B) and one dependency-gated dispatch (C).
+- **Observation:** Embedding “do not start until dependency accepted” directly in starter prompt text reduces accidental parallel execution against incomplete upstream contracts.
+- **Potential skill impact:** Require explicit dependency gate lines in all starter prompts for non-root tasks.
 - **Status:** OPEN
