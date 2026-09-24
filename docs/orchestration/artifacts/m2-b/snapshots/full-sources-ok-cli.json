@@ -1,0 +1,201 @@
+{
+  "schema_version": "m2.full_sources.v1",
+  "deterministic": true,
+  "generated_at": "2026-09-24T16:14:59Z",
+  "timezone": "Europe/Budapest",
+  "sources": {
+    "caldav": {
+      "omit": false,
+      "data": {
+        "timezone": "Europe/Budapest",
+        "events": [
+          {
+            "id": "evt-1",
+            "uid": "uid-evt-1",
+            "title": "Fogorvos",
+            "location": "Bartók Klinika",
+            "start": "2026-09-24T09:00:00+02:00",
+            "end": "2026-09-24T09:30:00+02:00",
+            "all_day": false,
+            "is_recurring_instance": false
+          },
+          {
+            "id": "evt-2",
+            "uid": "uid-evt-2",
+            "title": "Családi ebéd",
+            "location": "Otthon",
+            "start": "2026-09-27T00:00:00+02:00",
+            "end": "2026-09-27T00:00:00+02:00",
+            "all_day": true,
+            "is_recurring_instance": true
+          }
+        ],
+        "tasks": [
+          {
+            "id": "tsk-1",
+            "uid": "uid-tsk-1",
+            "title": "Számla befizetés",
+            "description": "Villanyszámla",
+            "due": "2026-09-23T00:00:00+02:00",
+            "all_day_due": true,
+            "bucket": "overdue",
+            "overdue_days": 1,
+            "priority": 3,
+            "categories": [
+              "pénzügy"
+            ],
+            "is_recurring_instance": false
+          },
+          {
+            "id": "tsk-2",
+            "uid": "uid-tsk-2",
+            "title": "Bringa szerviz",
+            "description": "Lánckenés",
+            "due": "2026-09-24T18:00:00+02:00",
+            "all_day_due": false,
+            "bucket": "today",
+            "overdue_days": 0,
+            "priority": 5,
+            "categories": [
+              "otthon"
+            ],
+            "is_recurring_instance": false
+          },
+          {
+            "id": "tsk-3",
+            "uid": "uid-tsk-3",
+            "title": "Olvasás",
+            "description": "",
+            "due": null,
+            "all_day_due": false,
+            "bucket": "anytime",
+            "overdue_days": null,
+            "priority": 0,
+            "categories": [],
+            "is_recurring_instance": false
+          }
+        ]
+      },
+      "health": {
+        "source": "caldav",
+        "status": "ok",
+        "message": null,
+        "checked_at": "2026-09-24T16:14:59Z"
+      }
+    },
+    "rss": {
+      "omit": false,
+      "data": {
+        "items": [
+          {
+            "feed": "Hírek",
+            "category": "local",
+            "title": "Új kerékpárút nyílt a belvárosban",
+            "url": "https://example.com/local/bikepath",
+            "publisher": "Hírek",
+            "published": "2026-09-24T04:50:00Z",
+            "language": "hu"
+          },
+          {
+            "feed": "Tech",
+            "category": "interest",
+            "title": "Open hardware meetup this weekend!",
+            "url": "https://example.com/tech/meetup",
+            "publisher": "Tech",
+            "published": "2026-09-24T02:20:00Z",
+            "language": "en"
+          }
+        ],
+        "filters": {
+          "max_age_hours": 24,
+          "include_without_published": false,
+          "dedup_order": [
+            "url",
+            "fuzzy_title"
+          ]
+        }
+      },
+      "health": {
+        "source": "rss",
+        "status": "ok",
+        "message": null,
+        "checked_at": "2026-09-24T16:14:59Z"
+      }
+    },
+    "weather": {
+      "omit": false,
+      "data": {
+        "today": {
+          "summary": "Napos, gyenge szél",
+          "high_c": 22.0,
+          "low_c": 13.0
+        },
+        "outlook": [
+          {
+            "date": "2026-09-25",
+            "summary": "Felhősödés",
+            "high_c": 21.0,
+            "low_c": 12.0
+          },
+          {
+            "date": "2026-09-26",
+            "summary": "Zápor",
+            "high_c": 18.0,
+            "low_c": 11.0
+          }
+        ],
+        "source": "open-meteo"
+      },
+      "health": {
+        "source": "weather",
+        "status": "ok",
+        "message": null,
+        "checked_at": "2026-09-24T16:14:59Z"
+      }
+    },
+    "almanac": {
+      "omit": false,
+      "data": {
+        "sunrise": "06:39",
+        "sunset": "18:42",
+        "moon_phase": "first_quarter",
+        "moon_illumination": 0.51,
+        "name_day": "Gellért",
+        "on_this_day": [
+          {
+            "year": 1873,
+            "text": "Budapest egyesítésének éve."
+          },
+          {
+            "year": 1957,
+            "text": "Megnyílt egy jelentős kulturális intézmény."
+          }
+        ]
+      },
+      "health": {
+        "source": "almanac",
+        "status": "ok",
+        "message": null,
+        "checked_at": "2026-09-24T16:14:59Z"
+      }
+    },
+    "rates": {
+      "omit": false,
+      "data": {
+        "source": "ecb-derived",
+        "published_date": "2026-09-23",
+        "values": {
+          "EUR_HUF": 398.12,
+          "USD_HUF": 352.05,
+          "CHF_HUF": 421.9
+        }
+      },
+      "health": {
+        "source": "rates",
+        "status": "ok",
+        "message": null,
+        "checked_at": "2026-09-24T16:14:59Z"
+      }
+    }
+  }
+}

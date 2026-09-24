@@ -1,0 +1,174 @@
+{
+  "settings": {
+    "timezone": "Europe/Budapest",
+    "now_iso": "2026-09-24T06:30:00+02:00",
+    "rss_max_age_hours": 24,
+    "rss_include_without_published": false
+  },
+  "caldav": {
+    "events": [
+      {
+        "id": "evt-1",
+        "uid": "uid-evt-1",
+        "title": "Fogorvos",
+        "location": "Bartók Klinika",
+        "start": "2026-09-24T09:00:00+02:00",
+        "end": "2026-09-24T09:30:00+02:00",
+        "recurring": false
+      },
+      {
+        "id": "evt-2",
+        "uid": "uid-evt-2",
+        "title": "Családi ebéd",
+        "location": "Otthon",
+        "start": "2026-09-27",
+        "end": "2026-09-27",
+        "recurring": true,
+        "recurrence_id": "20260927"
+      }
+    ],
+    "tasks": [
+      {
+        "id": "tsk-1",
+        "uid": "uid-tsk-1",
+        "title": "Számla befizetés",
+        "description": "Villanyszámla",
+        "due": "2026-09-23",
+        "priority": 3,
+        "status": "NEEDS-ACTION",
+        "categories": [
+          "pénzügy"
+        ]
+      },
+      {
+        "id": "tsk-2",
+        "uid": "uid-tsk-2",
+        "title": "Bringa szerviz",
+        "description": "Lánckenés",
+        "due": "2026-09-24T18:00:00+02:00",
+        "priority": 5,
+        "status": "NEEDS-ACTION",
+        "categories": [
+          "otthon"
+        ]
+      },
+      {
+        "id": "tsk-3",
+        "uid": "uid-tsk-3",
+        "title": "Olvasás",
+        "description": "",
+        "due": null,
+        "priority": 0,
+        "status": "IN-PROCESS",
+        "categories": []
+      },
+      {
+        "id": "tsk-4",
+        "uid": "uid-tsk-4",
+        "title": "Lezárt feladat",
+        "description": "",
+        "due": "2026-09-21",
+        "priority": 0,
+        "status": "COMPLETED",
+        "categories": []
+      }
+    ]
+  },
+  "rss": {
+    "entries": [
+      {
+        "feed": "Hírek",
+        "category": "local",
+        "title": "Új kerékpárút nyílt a belvárosban",
+        "url": "https://example.com/local/bikepath",
+        "publisher": "Hírek",
+        "published": "2026-09-24T04:50:00Z",
+        "language": "hu"
+      },
+      {
+        "feed": "Hírek",
+        "category": "local",
+        "title": "Új kerékpárút nyílt a belvárosban",
+        "url": "https://example.com/local/bikepath",
+        "publisher": "Hírek",
+        "published": "2026-09-24T04:52:00Z",
+        "language": "hu"
+      },
+      {
+        "feed": "Tech",
+        "category": "interest",
+        "title": "Open hardware meetup this weekend!",
+        "url": "https://example.com/tech/meetup",
+        "publisher": "Tech",
+        "published": "2026-09-24T02:20:00Z",
+        "language": "en"
+      },
+      {
+        "feed": "Old",
+        "category": "interest",
+        "title": "Too old article",
+        "url": "https://example.com/old/article",
+        "publisher": "Old",
+        "published": "2026-09-22T01:20:00Z",
+        "language": "en"
+      },
+      {
+        "feed": "NoTime",
+        "category": "interest",
+        "title": "Missing publish time",
+        "url": "https://example.com/notime/article",
+        "publisher": "NoTime",
+        "published": null,
+        "language": "en"
+      }
+    ]
+  },
+  "weather": {
+    "source": "open-meteo",
+    "today": {
+      "summary": "Napos, gyenge szél",
+      "high_c": 22,
+      "low_c": 13
+    },
+    "outlook": [
+      {
+        "date": "2026-09-25",
+        "summary": "Felhősödés",
+        "high_c": 21,
+        "low_c": 12
+      },
+      {
+        "date": "2026-09-26",
+        "summary": "Zápor",
+        "high_c": 18,
+        "low_c": 11
+      }
+    ]
+  },
+  "almanac": {
+    "sunrise": "06:39",
+    "sunset": "18:42",
+    "moon_phase": "first_quarter",
+    "moon_illumination": 0.51,
+    "name_day": "Gellért",
+    "on_this_day": [
+      {
+        "year": 1873,
+        "text": "Budapest egyesítésének éve."
+      },
+      {
+        "year": 1957,
+        "text": "Megnyílt egy jelentős kulturális intézmény."
+      }
+    ]
+  },
+  "rates": {
+    "source": "ecb-derived",
+    "published_date": "2026-09-23",
+    "values": {
+      "EUR_HUF": 398.12,
+      "USD_HUF": 352.05,
+      "CHF_HUF": 421.9
+    }
+  }
+}

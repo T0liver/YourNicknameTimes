@@ -1,0 +1,89 @@
+{
+  "schema_version": "m2.full_sources.v1",
+  "deterministic": true,
+  "generated_at": "2026-09-24T16:11:26Z",
+  "timezone": "Europe/Budapest",
+  "sources": {
+    "caldav": {
+      "omit": false,
+      "data": {
+        "timezone": "Europe/Budapest",
+        "events": [
+          {
+            "id": "evt-100",
+            "uid": "uid-evt-100",
+            "title": "Orvos",
+            "location": "",
+            "start": "2026-09-28T00:00:00+02:00",
+            "end": "2026-09-28T00:00:00+02:00",
+            "all_day": true,
+            "is_recurring_instance": false
+          }
+        ],
+        "tasks": [
+          {
+            "id": "tsk-100",
+            "uid": "uid-tsk-100",
+            "title": "Bérlet megújítás",
+            "description": "",
+            "due": "2026-09-27T00:00:00+02:00",
+            "all_day_due": true,
+            "bucket": "overdue",
+            "overdue_days": 1,
+            "priority": 2,
+            "categories": [
+              "utazás"
+            ],
+            "is_recurring_instance": false
+          }
+        ]
+      },
+      "health": {
+        "source": "caldav",
+        "status": "ok",
+        "message": null,
+        "checked_at": "2026-09-24T16:11:26Z"
+      }
+    },
+    "rss": {
+      "omit": true,
+      "data": null,
+      "health": {
+        "source": "rss",
+        "status": "degraded",
+        "message": "RSS fetch timeout",
+        "checked_at": "2026-09-24T16:11:26Z"
+      }
+    },
+    "weather": {
+      "omit": true,
+      "data": null,
+      "health": {
+        "source": "weather",
+        "status": "degraded",
+        "message": "Open-Meteo HTTP 503",
+        "checked_at": "2026-09-24T16:11:26Z"
+      }
+    },
+    "almanac": {
+      "omit": true,
+      "data": null,
+      "health": {
+        "source": "almanac",
+        "status": "degraded",
+        "message": "Wikipedia feed unavailable",
+        "checked_at": "2026-09-24T16:11:26Z"
+      }
+    },
+    "rates": {
+      "omit": true,
+      "data": null,
+      "health": {
+        "source": "rates",
+        "status": "degraded",
+        "message": "ECB daily payload missing",
+        "checked_at": "2026-09-24T16:11:26Z"
+      }
+    }
+  }
+}

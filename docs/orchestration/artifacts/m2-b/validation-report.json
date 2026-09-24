@@ -1,0 +1,16 @@
+{
+  "status": "ok",
+  "task_id": "M2-B-FULL-SOURCES",
+  "checks": {
+    "deterministic_contract_per_source": true,
+    "caldav_recurring_date_handling": true,
+    "rss_recency_dedup": true,
+    "omit_on_failure_weather_almanac_rates_rss": true,
+    "rss_opml_import_export": true
+  },
+  "snapshots": [
+    "/home/oliv/Documents/Programs/YourNicknameTimes/docs/orchestration/artifacts/m2-b/snapshots/full-sources-ok.json",
+    "/home/oliv/Documents/Programs/YourNicknameTimes/docs/orchestration/artifacts/m2-b/snapshots/full-sources-failures.json",
+    "/home/oliv/Documents/Programs/YourNicknameTimes/docs/orchestration/artifacts/m2-b/snapshots/rss-feeds.opml.json"
+  ]
+}

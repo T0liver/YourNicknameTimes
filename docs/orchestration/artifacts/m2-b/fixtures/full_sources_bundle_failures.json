@@ -1,0 +1,46 @@
+{
+  "settings": {
+    "timezone": "Europe/Budapest",
+    "now_iso": "2026-09-28T06:30:00+02:00",
+    "rss_max_age_hours": 24,
+    "rss_include_without_published": false
+  },
+  "caldav": {
+    "events": [
+      {
+        "id": "evt-100",
+        "uid": "uid-evt-100",
+        "title": "Orvos",
+        "location": "",
+        "start": "2026-09-28",
+        "end": "2026-09-28"
+      }
+    ],
+    "tasks": [
+      {
+        "id": "tsk-100",
+        "uid": "uid-tsk-100",
+        "title": "Bérlet megújítás",
+        "description": "",
+        "due": "2026-09-27",
+        "priority": 2,
+        "status": "NEEDS-ACTION",
+        "categories": [
+          "utazás"
+        ]
+      }
+    ]
+  },
+  "rss": {
+    "error": "RSS fetch timeout"
+  },
+  "weather": {
+    "error": "Open-Meteo HTTP 503"
+  },
+  "almanac": {
+    "error": "Wikipedia feed unavailable"
+  },
+  "rates": {
+    "error": "ECB daily payload missing"
+  }
+}
