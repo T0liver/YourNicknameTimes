@@ -1,0 +1,36 @@
+{
+  "date": "2026-09-24",
+  "dateline": "Vol. 42 · 2026. szeptember 24., csütörtök · Budapest · AS OF 06:30",
+  "masthead": {
+    "nickname": "Főző Tűző",
+    "motto": "",
+    "city": "Budapest"
+  },
+  "weekend": {
+    "enabled": true,
+    "show_sun_icon": true,
+    "greeting": "Szép hétvégét!"
+  },
+  "sections": {
+    "news": [
+      {
+        "headline": "Őszi időjárás: hűvös reggel, enyhe délután",
+        "publisher": "Hírek"
+      }
+    ],
+    "today": [
+      {
+        "time": "09:00",
+        "title": "Ügyfélhívás"
+      }
+    ],
+    "daily_item": {
+      "type": "xkcd"
+    },
+    "almanac": {
+      "sunrise": "06:39",
+      "sunset": "18:42",
+      "name_day": "Gellért"
+    }
+  }
+}

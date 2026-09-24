@@ -1,0 +1,26 @@
+{
+  "date": "2026-09-27",
+  "dateline": "Vol. 44 · 2026. szeptember 27., vasárnap · Budapest · AS OF 08:00",
+  "masthead": {
+    "nickname": "Főző Tűző",
+    "motto": "Hétvégi kiadás",
+    "city": "Budapest"
+  },
+  "weekend": {
+    "enabled": true,
+    "show_sun_icon": false,
+    "greeting": ""
+  },
+  "sections": {
+    "news": [
+      {
+        "headline": "Őrzött parkok és űrtéma kiállítás",
+        "publisher": "Városi Krónika"
+      }
+    ],
+    "daily_item": {
+      "type": "sudoku",
+      "difficulty": "easy"
+    }
+  }
+}

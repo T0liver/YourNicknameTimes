@@ -1,0 +1,37 @@
+{
+  "date": "2026-09-26",
+  "dateline": "Vol. 43 · 2026. szeptember 26., szombat · Budapest · AS OF 08:00",
+  "masthead": {
+    "nickname": "Főző Tűző",
+    "motto": "Reggeli lap őszinte hírekkel",
+    "city": "Budapest"
+  },
+  "weekend": {
+    "enabled": true,
+    "show_sun_icon": true,
+    "greeting": "Szép, nyugodt hétvégét!"
+  },
+  "sections": {
+    "news": [
+      {
+        "headline": "Könnyed hétvégi programok a városban",
+        "publisher": "Hobbi Magazin"
+      }
+    ],
+    "today": [
+      {
+        "time": "10:00",
+        "title": "Piaci bevásárlás"
+      }
+    ],
+    "daily_item": {
+      "type": "sudoku",
+      "difficulty": "easy"
+    },
+    "almanac": {
+      "sunrise": "06:42",
+      "sunset": "18:37",
+      "name_day": "Jusztina"
+    }
+  }
+}

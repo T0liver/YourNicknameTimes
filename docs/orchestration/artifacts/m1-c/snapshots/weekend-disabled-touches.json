@@ -1,0 +1,49 @@
+{
+  "schema_version": "m1.layout.bootstrap.v1",
+  "edition": {
+    "date": "2026-09-27",
+    "locale": "hu-HU",
+    "mode": "weekend",
+    "deterministic": true,
+    "data_profile": "fake_hu_m1"
+  },
+  "masthead": {
+    "title": "Főző Tűző Times",
+    "motto": "Hétvégi kiadás",
+    "show_motto": true,
+    "motto_collapsed": false,
+    "city": "Budapest",
+    "dateline": "Vol. 44 · 2026. szeptember 27., vasárnap · Budapest · AS OF 08:00",
+    "weekend_sun_icon": false,
+    "weekend_greeting": "",
+    "show_weekend_greeting": false
+  },
+  "sections": {
+    "news": [
+      {
+        "headline": "Őrzött parkok és űrtéma kiállítás",
+        "publisher": "Városi Krónika"
+      }
+    ],
+    "daily_item": {
+      "type": "sudoku",
+      "difficulty": "easy"
+    }
+  },
+  "render_contract": {
+    "page_size": "A4",
+    "target_pages": 1,
+    "glyph_probe": "ŐőŰű",
+    "required_milestone_gate": "M1",
+    "inputs": {
+      "title_source": "nickname + ' Times'",
+      "motto_empty_collapses": true,
+      "weekend_toggle_drives_icon_and_greeting": true
+    }
+  },
+  "metadata": {
+    "owner": "agent-c-edition-engine",
+    "task_id": "M1-C-LAYOUT-BOOTSTRAP",
+    "handoff_target": "M1-D-A4-RENDER"
+  }
+}

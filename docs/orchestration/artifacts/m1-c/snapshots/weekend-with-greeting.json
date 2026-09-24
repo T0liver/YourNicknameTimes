@@ -1,0 +1,60 @@
+{
+  "schema_version": "m1.layout.bootstrap.v1",
+  "edition": {
+    "date": "2026-09-26",
+    "locale": "hu-HU",
+    "mode": "weekend",
+    "deterministic": true,
+    "data_profile": "fake_hu_m1"
+  },
+  "masthead": {
+    "title": "Főző Tűző Times",
+    "motto": "Reggeli lap őszinte hírekkel",
+    "show_motto": true,
+    "motto_collapsed": false,
+    "city": "Budapest",
+    "dateline": "Vol. 43 · 2026. szeptember 26., szombat · Budapest · AS OF 08:00",
+    "weekend_sun_icon": true,
+    "weekend_greeting": "Szép, nyugodt hétvégét!",
+    "show_weekend_greeting": true
+  },
+  "sections": {
+    "news": [
+      {
+        "headline": "Könnyed hétvégi programok a városban",
+        "publisher": "Hobbi Magazin"
+      }
+    ],
+    "today": [
+      {
+        "time": "10:00",
+        "title": "Piaci bevásárlás"
+      }
+    ],
+    "daily_item": {
+      "type": "sudoku",
+      "difficulty": "easy"
+    },
+    "almanac": {
+      "sunrise": "06:42",
+      "sunset": "18:37",
+      "name_day": "Jusztina"
+    }
+  },
+  "render_contract": {
+    "page_size": "A4",
+    "target_pages": 1,
+    "glyph_probe": "ŐőŰű",
+    "required_milestone_gate": "M1",
+    "inputs": {
+      "title_source": "nickname + ' Times'",
+      "motto_empty_collapses": true,
+      "weekend_toggle_drives_icon_and_greeting": true
+    }
+  },
+  "metadata": {
+    "owner": "agent-c-edition-engine",
+    "task_id": "M1-C-LAYOUT-BOOTSTRAP",
+    "handoff_target": "M1-D-A4-RENDER"
+  }
+}
