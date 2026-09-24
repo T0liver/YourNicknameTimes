@@ -10,6 +10,7 @@
 ## Scope
 
 ### In scope
+
 - Validate one-page A4 render from Agent C snapshot/template path.
 - Verify Hungarian glyph rendering for `ő` and `ű` in all used fonts.
 - Verify `{Nickname} Times` masthead rendering and empty motto no-gap collapse.
@@ -18,6 +19,7 @@
 - Measure and report render time on Raspberry Pi target.
 
 ### Out of scope
+
 - Full M3 print lifecycle robustness and Dropbox retry policies.
 - Source integration logic and deterministic composition ownership.
 - Dashboard/UI feature ownership.
@@ -78,6 +80,7 @@ If blocked, stop implementation and return:
 
 Provide explicit 30/70/100 progress checkpoints.
 At 100%, include evidence specifically covering:
+
 - one-page A4 proof,
 - glyph proof for `ő` and `ű`,
 - masthead + empty motto-collapse proof,
