@@ -31,3 +31,9 @@ Use this log to capture reusable workflow and methodology observations.
 - **Observation:** Explicitly separating blocker classes (hardware, credentials, live endpoint) allows parallel unblock work and shortens milestone lead time.
 - **Potential skill impact:** Add a standard unblock matrix section to manager cycle outputs for faster closure of smoke milestones.
 - **Status:** OPEN
+
+### Observation 6: Prewriting starter prompts reduces dispatch latency
+- **Context:** M1 kickoff preparation required immediate launch and one dependency-gated launch.
+- **Observation:** Keeping a single starter-prompts file with copy/paste launch text and attachment lists prevents message drift and speeds manager response time.
+- **Potential skill impact:** Standardize `<milestone>-starter-prompts.md` as part of each wave dispatch artifact set.
+- **Status:** OPEN
