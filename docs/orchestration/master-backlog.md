@@ -21,9 +21,9 @@ Use this as the central tracking board for the Master agent.
 
 | Task ID | Milestone | Wave | Owner | Scope summary | Depends on | Priority | Status | Evidence links | Last update |
 |---|---|---|---|---|---|---|---|---|---|
-| M0-A-PLATFORM-SMOKE | M0 | W1 | Agent A | Platform prereqs, CUPS baseline, service scaffolding | none | P0 | blocked | blocked evidence: no USB printer + no CUPS destination; non-Pi host cannot satisfy gate proof | 2026-09-22 |
-| M0-B-DATA-SMOKE | M0 | W1 | Agent B | CalDAV listing + source adapter smoke checks | none | P0 | in_review | evidence: `caldav_smoke.py` implemented with JSON output + deterministic exits; live Baikal success proof pending | 2026-09-22 |
-| M0-D-DELIVERY-SMOKE | M0 | W1 | Agent D | OpenRouter test path support + Dropbox app-folder upload smoke | none | P0 | blocked | blocked evidence: `openrouter_smoke.py`/`dropbox_smoke.py` added; missing `OPENROUTER_API_KEY` + `DROPBOX_ACCESS_TOKEN` | 2026-09-22 |
+| M0-A-PLATFORM-SMOKE | M0 | W1 | Agent A | Platform prereqs, CUPS baseline, service scaffolding | none | P0 | accepted | evidence: Pi host validated, Brother HL-1210W detected, CUPS queue `newspaper-printer` present, CLI test print submitted (`newspaper-printer-3`) + invalid-destination failure path verified | 2026-09-24 |
+| M0-B-DATA-SMOKE | M0 | W1 | Agent B | CalDAV listing + source adapter smoke checks | none | P0 | accepted | evidence: live Baikal run exit 0 with collections shown (`Default calendar`, `TestCal`) and deterministic failure-path exits | 2026-09-24 |
+| M0-D-DELIVERY-SMOKE | M0 | W1 | Agent D | OpenRouter test path support + Dropbox app-folder upload smoke | none | P0 | accepted | evidence: live OpenRouter and Dropbox smoke runs both exit 0 with JSON status ok and path checks/cleanup confirmed | 2026-09-24 |
 | M1-C-LAYOUT-BOOTSTRAP | M1 | W1 | Agent C | Static edition composition with fake HU data | M0-A-PLATFORM-SMOKE, M0-B-DATA-SMOKE | P1 | not_started |  |  |
 | M1-D-A4-RENDER | M1 | W2 | Agent D | One-page A4 render path and print-fit verification | M1-C-LAYOUT-BOOTSTRAP | P0 | not_started |  |  |
 | M2-B-FULL-SOURCES | M2 | W3 | Agent B | Deterministic full source integrations and normalization | M0-B-DATA-SMOKE | P0 | not_started |  |  |

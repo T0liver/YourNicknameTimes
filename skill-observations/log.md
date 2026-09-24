@@ -25,3 +25,9 @@ Use this log to capture reusable workflow and methodology observations.
 - **Observation:** Using `in_review` + conditional acceptance keeps momentum while clearly preventing premature milestone gate closure.
 - **Potential skill impact:** Apply a standard “implementation accepted / gate pending” status note pattern in backlog evidence fields.
 - **Status:** OPEN
+
+### Observation 5: Environment blockers can be burned down in parallel
+- **Context:** M0-A (hardware/CUPS), M0-B (live Baikal), and M0-D (secrets) were unblocked independently before final gate close.
+- **Observation:** Explicitly separating blocker classes (hardware, credentials, live endpoint) allows parallel unblock work and shortens milestone lead time.
+- **Potential skill impact:** Add a standard unblock matrix section to manager cycle outputs for faster closure of smoke milestones.
+- **Status:** OPEN
