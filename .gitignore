@@ -1,0 +1,53 @@
+# Credentials and secrets
+.env
+.env.*
+!.env.example
+credentials.json
+secrets.json
+secrets/
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+
+# Local tooling
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.npm/
+*.egg-info/
+.tox/
+.coverage
+htmlcov/
+dist/
+build/
+
+# Editor junk
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Installed skill trees
+.agents/
+
+# Generated BMad runtime and output.
+# Tracked: _bmad/config.toml and _bmad/custom/ except *.user.toml
+_bmad/*
+!_bmad/config.toml
+!_bmad/custom/
+_bmad/custom/*.user.toml
+_bmad-output/
