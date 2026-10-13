@@ -49,8 +49,10 @@ The-Firstname-Times-Setup-Kit-v17.3/
 
 # Generated BMad runtime and output.
 # Tracked: _bmad/config.toml and _bmad/custom/ except *.user.toml
+# Tracked: the initiative folder under _bmad-output/ (tickets and spec).
 _bmad/*
 !_bmad/config.toml
 !_bmad/custom/
 _bmad/custom/*.user.toml
-_bmad-output/
+_bmad-output/*
+!_bmad-output/initiative-your-nickname-times/
