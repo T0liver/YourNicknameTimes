@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<title>{{ nickname }} Times</title>
+<link rel="stylesheet" href="static/edition.css">
+</head>
+<body>
+<section class="sheet">
+<div class="canvas">
+  <header class="masthead">
+    {% if motto %}<div class="motto">{{ motto }}</div>{% endif %}
+    <div class="nameplate">{{ nickname }} Times</div>
+    {% if weekend and greeting %}<div class="greeting">{{ greeting }}</div>{% endif %}
+    <div class="mast-rules"></div>
+    <div class="dateline">{% if weekend and show_sun %}<img class="weekend-sun" src="static/icons/weekend-sun.svg" alt="">{% endif %}{{ dateline }}</div>
+  </header>
+
+  {% set has_news = news %}
+  {% set has_today = today %}
+  {% set has_week = this_week %}
+  {% set has_lead = has_news or has_today or has_week %}
+  {% set has_weather = weather and (weather.summary or weather.outlook) %}
+  {% set has_almanac = almanac and almanac.lines %}
+  {% set has_rail = has_weather or has_almanac %}
+  {% set has_prep = prep %}
+  {% set has_due_col = due or overdue %}
+  {% set has_daily = daily_item %}
+  {% set band_count = (1 if has_prep else 0) + (1 if has_due_col else 0) + (1 if has_daily else 0) %}
+
+  {% if has_lead or has_rail %}
+  <table class="a1-main">
+    <tr>
+      {% if has_lead %}
+      <td class="lead-td{% if not has_rail %} full{% endif %}">
+        {% if has_news %}
+        <div class="block-label">Hírek</div>
+        {% for item in news %}
+          {% if item.kind == "hed" %}
+        <h1 class="hed-news">{{ item.headline }}</h1>
+          {% else %}
+        <table class="list-block"><tr>
+          <td class="list-time">{{ item.time }}</td>
+          <td><div class="list-title">{{ item.headline }}</div>{% if item.dek %}<p class="list-dek">{{ item.dek }}</p>{% endif %}</td>
+          <td class="list-meta">{{ item.publisher }}</td>
+        </tr></table>
+          {% endif %}
+        {% endfor %}
+        {% endif %}
+
+        {% if has_today %}
+        <div class="block-label">Ma</div>
+        {% for item in today %}
+        <table class="list-block"><tr>
+          <td class="list-time">{{ item.time }}</td>
+          <td><div class="list-title">{{ item.title }}</div>{% if item.place %}<p class="list-dek">{{ item.place }}</p>{% endif %}{% if item.dek %}<p class="list-dek">{{ item.dek }}</p>{% endif %}</td>
+          <td class="list-meta"></td>
+        </tr></table>
+        {% endfor %}
+        {% endif %}
+
+        {% if has_week %}
+        <div class="block-label">Ezen a héten</div>
+        {% for item in this_week %}
+        <div class="week-item"><strong>{{ item.day }}</strong> {{ item.text }}</div>
+        {% endfor %}
+        {% endif %}
+      </td>
+      {% endif %}
+
+      {% if has_rail %}
+      <td class="rail-td{% if not has_lead %} full{% endif %}">
+        {% if has_weather %}
+        <div class="block-label">Időjárás</div>
+        <div class="wx-hl">{{ weather.high }} / {{ weather.low }} <span>{{ weather.hl_label }}</span></div>
+        <p class="wx-body">{{ weather.summary }}</p>
+        {% if weather.outlook %}
+        <table class="wx-out">
+          {% for row in weather.outlook %}
+          <tr><td class="d">{{ row.day }}</td><td>{{ row.text }}</td><td class="f">{{ row.temps }}</td></tr>
+          {% endfor %}
+        </table>
+        {% endif %}
+        {% endif %}
+
+        {% if has_almanac %}
+        <div class="block-label">Almanach</div>
+        {% for line in almanac.lines %}
+        <div class="look">
+          <div class="look-k">{{ line.label }}</div>
+          <p>{{ line.text }}</p>
+        </div>
+        {% endfor %}
+        {% endif %}
+      </td>
+      {% endif %}
+    </tr>
+  </table>
+  {% endif %}
+
+  {% if band_count %}
+  <table class="band band-{{ band_count }}">
+    <tr>
+      {% if has_prep %}
+      <td class="{% if band_count == 1 %}full{% else %}l{% endif %}">
+        <div class="block-label">Holnapra</div>
+        {% for item in prep %}
+        <p>{{ item }}</p>
+        {% endfor %}
+      </td>
+      {% endif %}
+      {% if has_due_col %}
+      <td class="{% if band_count == 1 %}full{% elif band_count == 2 and not has_prep %}l{% elif band_count == 2 %}r{% else %}mid{% endif %}">
+        {% if due %}
+        <div class="block-label">Esedékes</div>
+        {% for item in due %}
+        <p>{{ item }}</p>
+        {% endfor %}
+        {% endif %}
+        {% if overdue %}
+        <div class="block-label">Lejárt</div>
+        {% for item in overdue %}
+        <p>{{ item }}</p>
+        {% endfor %}
+        {% endif %}
+      </td>
+      {% endif %}
+      {% if has_daily %}
+      <td class="{% if band_count == 1 %}full{% else %}r{% endif %}">
+        <div class="block-label">Napi tétel</div>
+        <p>{{ daily_item }}</p>
+      </td>
+      {% endif %}
+    </tr>
+  </table>
+  {% endif %}
+</div>
+</section>
+</body>
+</html>

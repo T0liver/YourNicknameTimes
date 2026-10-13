@@ -1,0 +1,1 @@
+"""YourNicknameTimes edition renderer."""

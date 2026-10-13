@@ -1,0 +1,397 @@
+/* YourNicknameTimes — A4 table layout for WeasyPrint.
+   6-col grid: 1.197in × 6 + 0.09in × 5 gutters = 7.63in.
+   Span-4 = 5.06in. Span-2 = 2.48in. Span-2 with left hairline = 2.57in. */
+
+@font-face {
+  font-family: "Chomsky";
+  src: url("fonts/Chomsky.otf") format("opentype");
+}
+@font-face {
+  font-family: "Libre Franklin";
+  src: url("fonts/LibreFranklin-Regular.ttf") format("truetype");
+  font-weight: 400;
+}
+@font-face {
+  font-family: "Libre Franklin";
+  src: url("fonts/LibreFranklin-Bold.ttf") format("truetype");
+  font-weight: 700;
+}
+@font-face {
+  font-family: "Libre Franklin";
+  src: url("fonts/LibreFranklin-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+}
+@font-face {
+  font-family: "Newsreader Deck";
+  src: url("fonts/NewsreaderDeckItalic.ttf") format("truetype");
+  font-style: italic;
+}
+@font-face {
+  font-family: "Newsreader Display";
+  src: url("fonts/NewsreaderDisplayExtraBold.ttf") format("truetype");
+  font-weight: 800;
+}
+@font-face {
+  font-family: "Newsreader Hed";
+  src: url("fonts/NewsreaderHedBold.ttf") format("truetype");
+  font-weight: 700;
+}
+@font-face {
+  font-family: "Newsreader Text";
+  src: url("fonts/NewsreaderTextRegular.ttf") format("truetype");
+  font-weight: 400;
+}
+@font-face {
+  font-family: "Newsreader Text";
+  src: url("fonts/NewsreaderTextBold.ttf") format("truetype");
+  font-weight: 700;
+}
+
+@page { size: A4; margin: 0; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+  color: #111111;
+  font-family: "Newsreader Text", serif;
+  font-size: 8pt;
+  line-height: 9.6pt;
+  hyphens: auto;
+}
+
+* { box-sizing: border-box; }
+
+img { display: block; border: 0; }
+
+table { border-collapse: collapse; border-spacing: 0; }
+td { vertical-align: top; }
+
+.sheet {
+  width: 210mm;
+  height: 297mm;
+  padding: 0.28in 0.32in 0.50in;
+  page-break-after: always;
+  page-break-inside: avoid;
+  overflow: hidden;
+  position: relative;
+}
+.sheet:last-child { page-break-after: auto; }
+
+.canvas { width: 7.63in; }
+
+.grid { width: 7.63in; table-layout: fixed; }
+.span4 { width: 5.06in; padding: 0 0.07in 0 0; }
+.span4-flush { width: 5.06in; padding: 0; }
+.span2 {
+  width: 2.57in;
+  padding: 0 0 0 0.10in;
+  border-left: 0.38pt solid #111;
+}
+.span2a { width: 2.48in; padding: 0 0.08in 0 0; }
+.span2b {
+  width: 2.57in;
+  padding: 0 0.08in 0 0.10in;
+  border-left: 0.38pt solid #111;
+}
+
+/* Type */
+.kicker {
+  font-family: "Libre Franklin", sans-serif;
+  font-weight: 800;
+  font-size: 6.2pt;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  margin: 0.02in 0 0.04in;
+  padding: 0;
+}
+.hed-a1 {
+  font-family: "Newsreader Display", serif;
+  font-weight: 800;
+  font-size: 21pt;
+  line-height: 22.5pt;
+  margin: 0 0 0.045in;
+  hyphens: none;
+}
+.hed-news {
+  font-family: "Newsreader Display", serif;
+  font-weight: 800;
+  font-size: 21pt;
+  line-height: 22.5pt;
+  margin: 0 0 0.045in;
+  hyphens: auto;
+}
+.hed-inbox {
+  font-family: "Newsreader Display", serif;
+  font-weight: 800;
+  font-size: 16.5pt;
+  line-height: 18.2pt;
+  margin: 0 0 0.04in;
+  hyphens: none;
+}
+.hed-brief {
+  font-family: "Newsreader Display", serif;
+  font-weight: 800;
+  font-size: 12.5pt;
+  line-height: 14pt;
+  margin: 0 0 0.04in;
+  hyphens: none;
+}
+.hed-dear {
+  font-family: "Newsreader Display", serif;
+  font-weight: 800;
+  font-size: 14pt;
+  line-height: 15.5pt;
+  margin: 0 0 0.04in;
+}
+.deck {
+  font-family: "Newsreader Deck", serif;
+  font-style: italic;
+  font-size: 9.2pt;
+  line-height: 11.2pt;
+  margin: 0 0 0.06in;
+  hyphens: none;
+}
+.deck-in {
+  font-family: "Newsreader Deck", serif;
+  font-style: italic;
+  font-size: 8.8pt;
+  line-height: 10.8pt;
+  margin: 0 0 0.05in;
+  hyphens: none;
+}
+.byline {
+  font-family: "Libre Franklin", sans-serif;
+  font-weight: 800;
+  font-size: 6.0pt;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin: 0 0 0.07in;
+}
+.credit {
+  font-family: "Libre Franklin", sans-serif;
+  font-size: 5.6pt;
+  margin: 0.07in 0 0;
+}
+.body p {
+  font-family: "Newsreader Text", serif;
+  font-size: 8pt;
+  line-height: 9.6pt;
+  margin: 0 0 0.065in;
+  text-align: justify;
+  hyphens: auto;
+}
+.body p:last-child { margin-bottom: 0; }
+
+/* Masthead */
+.masthead { text-align: center; margin: 0 0 0.08in; width: 7.63in; }
+.motto {
+  font-family: "Newsreader Deck", serif;
+  font-style: italic;
+  font-size: 8.6pt;
+  line-height: 1.1;
+  margin: 0 0 0.01in;
+}
+.nameplate {
+  font-family: "Chomsky", "Libre Franklin", serif;
+  font-size: 62pt;
+  line-height: 0.88;
+  margin: 0;
+  white-space: nowrap;
+}
+.dateline {
+  font-family: "Libre Franklin", sans-serif;
+  font-weight: 800;
+  font-size: 6.2pt;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0.07in 0 0;
+}
+.weekend-sun {
+  display: inline-block;
+  width: 0.12in;
+  height: 0.12in;
+  vertical-align: -0.02in;
+  margin-right: 0.06in;
+}
+.mast-rules {
+  border-top: 2.4pt solid #111;
+  border-bottom: 0.38pt solid #111;
+  height: 0.055in;
+  margin: 0.06in 0 0;
+}
+
+/* Folio — type clear of rules */
+.folio-foot {
+  width: 7.63in;
+  font-family: "Libre Franklin", sans-serif;
+  font-weight: 800;
+  font-size: 6.0pt;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: center;
+  padding-top: 0.10in;
+  margin-top: 0.10in;
+  border-top: 0.38pt solid #111;
+}
+
+.img-lead { width: 5.06in; height: 2.20in; margin: 0 0 0.07in; }
+.img-weather { width: 2.38in; height: 1.06in; margin: 0.05in 0; }
+
+/* A1 */
+.a1-main { width: 7.63in; table-layout: fixed; margin: 0; }
+.lead-td { width: 5.06in; padding: 0; }
+.lead-td.full { width: 7.63in; }
+.rail-td {
+  width: 2.57in;
+  padding: 0 0 0 0.10in;
+  border-left: 0.38pt solid #111;
+}
+.rail-td.full {
+  width: 7.63in;
+  padding: 0;
+  border-left: 0;
+}
+
+.body2 { width: 5.06in; table-layout: fixed; margin: 0 0 0.07in; }
+.body2 .c1 { width: 2.48in; padding: 0 0.08in 0 0; }
+.body2 .c2 {
+  width: 2.57in;
+  padding: 0 0.08in 0 0.10in;
+  border-left: 0.38pt solid #111;
+}
+
+.block-label {
+  font-family: "Libre Franklin", sans-serif;
+  font-weight: 800;
+  font-size: 6.2pt;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin: 0.08in 0 0.05in;
+  padding: 0.02in 0 0.08in;
+  border-bottom: 0.38pt solid #111;
+}
+.rail-td .block-label:first-child { margin-top: 0.04in; }
+.lead-td .block-label { margin-right: 0.07in; }
+
+/* Lists */
+.list-block {
+  width: 100%;
+  table-layout: fixed;
+  margin: 0 0 0.045in;
+}
+.list-block td { vertical-align: top; }
+.list-time {
+  width: 0.82in;
+  font-family: "Libre Franklin", sans-serif;
+  font-weight: 800;
+  font-size: 7.0pt;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 9.6pt;
+  padding: 0.015in 0.055in 0 0;
+}
+.list-title {
+  font-family: "Newsreader Hed", serif;
+  font-weight: 700;
+  font-size: 8.2pt;
+  line-height: 9.8pt;
+  hyphens: auto;
+}
+.list-meta {
+  font-family: "Libre Franklin", sans-serif;
+  font-weight: 800;
+  font-size: 5.8pt;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  text-align: right;
+  white-space: nowrap;
+  padding: 0 0 0 0.06in;
+  width: 0.88in;
+}
+.list-dek {
+  font-family: "Newsreader Text", serif;
+  font-size: 7.4pt;
+  line-height: 8.8pt;
+  margin: 0;
+  padding: 0;
+}
+.week-item {
+  margin: 0 0.07in 0.045in 0;
+  font-size: 7.6pt;
+  line-height: 9.2pt;
+}
+.week-item strong {
+  font-family: "Libre Franklin", sans-serif;
+  font-weight: 800;
+  font-size: 6.0pt;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Weather */
+.wx-hl {
+  font-family: "Newsreader Display", serif;
+  font-weight: 800;
+  font-size: 16pt;
+  line-height: 1;
+  margin: 0 0 0.035in;
+}
+.wx-hl span {
+  font-family: "Libre Franklin", sans-serif;
+  font-weight: 800;
+  font-size: 5.6pt;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-left: 0.07in;
+}
+.wx-body {
+  font-size: 7.4pt;
+  line-height: 8.8pt;
+  margin: 0 0 0.03in;
+  text-align: justify;
+  hyphens: auto;
+}
+.wx-out { width: 100%; table-layout: fixed; }
+.wx-out td {
+  font-family: "Libre Franklin", sans-serif;
+  font-size: 6.0pt;
+  line-height: 8.0pt;
+  padding: 0.045in 0 0.018in;
+  border-top: 0.35pt solid #111;
+}
+.wx-out .d { font-weight: 800; letter-spacing: 0.10em; text-transform: uppercase; width: 0.38in; }
+.wx-out .f { text-align: right; font-weight: 800; width: 0.58in; }
+
+.look { margin: 0 0 0.055in; }
+.look-k {
+  font-family: "Libre Franklin", sans-serif;
+  font-weight: 800;
+  font-size: 5.7pt;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  margin: 0 0 0.018in;
+}
+.look-k .r { float: right; }
+.look p { font-size: 7.3pt; line-height: 8.8pt; margin: 0; hyphens: auto; }
+
+/* Bottom band — same 2.48 / 2.48 / 2.48 edges as lead+rail (rule at 5.06in) */
+.band { width: 7.63in; table-layout: fixed; margin-top: 0.08in; padding-top: 0; border-top: 1.0pt solid #111; }
+.band .l { width: 2.48in; padding: 0 0.08in 0 0; }
+.band .mid, .band .r {
+  width: 2.57in;
+  padding: 0 0.08in 0 0.10in;
+  border-left: 0.38pt solid #111;
+}
+.band-2 .l { width: 3.77in; padding: 0 0.08in 0 0; }
+.band-2 .r {
+  width: 3.86in;
+  padding: 0 0.08in 0 0.10in;
+  border-left: 0.38pt solid #111;
+}
+.band-1 .full { width: 7.63in; padding: 0; border-left: 0; }
+.band .block-label { margin-top: 0; padding-top: 0.10in; }
+.band p { font-size: 7.3pt; line-height: 8.8pt; margin: 0; hyphens: auto; }
+
+.clear { clear: both; }
