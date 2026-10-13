@@ -44,6 +44,9 @@ Thumbs.db
 # Installed skill trees
 .agents/
 
+# Local style reference. Someone else's kit; not part of the published app.
+The-Firstname-Times-Setup-Kit-v17.3/
+
 # Generated BMad runtime and output.
 # Tracked: _bmad/config.toml and _bmad/custom/ except *.user.toml
 _bmad/*
