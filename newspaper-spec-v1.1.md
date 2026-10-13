@@ -15,6 +15,20 @@ A self-hosted morning paper. A Raspberry Pi collects your calendar, tasks, news,
 - The old "heartbeat later" idea is replaced by the status endpoint; a push-style heartbeat stays optional.
 - Printer notes updated for a USB printer of unknown model.
 
+### Settled with the operator
+
+- The style kit is the local folder `The-Firstname-Times-Setup-Kit-v17.3/`. It is gitignored and is not published. The app uses its masthead fonts, table grid, and CSS, refit to one A4 page. Avatars, generated art, and the kit's four-page US Letter edition stay in the kit. Chomsky, Libre Franklin, and Newsreader are SIL Open Font License 1.1, so those font files may ship with the app.
+- The printer is a Brother, on USB, through CUPS. The exact model number is written down when it is plugged in.
+- Calendar and tasks are both Baïkal. Host, username, and password are settings. A fresh install has an empty host. No personal server address is shipped in code or defaults.
+- A fresh install's feed list starts with Telex (`https://telex.hu/rss`, local) and Wired (`https://www.wired.com/feed/rss`, interest), stored as settings rows.
+- Name days use the MIT table [froccsos/nevnapok-json](https://github.com/froccsos/nevnapok-json), vendored in the project. The list was compiled from a MEK page last updated in July 1997. Print the day's main names.
+- On this day follows the paper language. If that Wikipedia has no feed for the day, use English and record the fallback.
+- Rates are the MNB daily quotes for EUR, USD, and CHF in HUF (`GetCurrentExchangeRates`), printed with value, rate date, and source MNB.
+- The weekend greeting defaults to "Yippie, weekend! You earned it!" and stays editable.
+- Each planner note is at most 120 characters.
+- Duplex is on by default.
+- A held edition raises an info alert after 1 hour. A feed counts as dead after 6 minutes of failure. Disk low is under 500 MB free. Disk critical is under 100 MB free. The model-limit alert fires at 20 requests today, or at 80% of the daily limit, whichever comes first. The clock reports down if it is still unsynced 1 hour after boot.
+
 ---
 
 ## 1. Decisions
@@ -23,10 +37,10 @@ A self-hosted morning paper. A Raspberry Pi collects your calendar, tasks, news,
 | --- | --- | --- |
 | 1 | Language | Paper and dashboard default to **Hungarian**, switchable in settings (separate settings for each). RSS headlines print in their **original language**, so English hobby feeds stay English. |
 | 2 | Paper | **A4**. Grid re-derived (section 5.2). |
-| 3 | Task app | Unknown. The dashboard **discovers** calendars and task lists on Baïkal and lets you pick. |
-| 4 | RSS | No hard-coded feeds. All feeds are managed in the dashboard (add, tag, test, OPML import/export). |
+| 3 | Task app | Calendar and tasks are both Baïkal. The dashboard **discovers** calendars and task lists and lets you pick. The host is a setting and ships empty. |
+| 4 | RSS | Feeds live in settings (add, tag, test, OPML import/export). A fresh install starts with Telex (local) and Wired (interest). |
 | 5 | OpenRouter | Funded key (1,000 requests/day). Sending task text to free providers is accepted; a "titles only" privacy switch still exists. |
-| 6 | Hardware | Raspberry Pi 3B+ (probably), printer via **USB**, model TBD (section 14). |
+| 6 | Hardware | Raspberry Pi 3B+, Brother printer via **USB** and CUPS. Exact model recorded at plug-in (section 14). |
 | 7 | Time | Default **06:30**, configurable in the dashboard. |
 | 8 | Daily item | xkcd included. **One item per day**: a comic on some days, a puzzle on others (rotation table in settings). |
 | 9 | Cloud copy | **Trimmed** by default, changeable in the dashboard. |
@@ -149,7 +163,7 @@ When the weekend switch is on, Saturday and Sunday use:
 - **News mood:** the picker is told to prefer upbeat, hobby and human-interest items over conflict, crime or disaster headlines. Local items that are directly relevant are still allowed. Without the LLM, hobby-category weights are raised instead. A setting (`light` or `neutral`) controls this.
 - **Note wording:** planner notes are a little friendlier but stay plain. The kit's rules still apply (no jokes, no personification, no clever reversals).
 - **Daily item:** easy sudoku difficulty and a larger box for the puzzle.
-- **Small touches:** the sun icon (a static asset, not generated art) and a short greeting line, both editable.
+- **Small touches:** the sun icon (a static asset, not generated art) and a short greeting line, both editable. The greeting defaults to "Yippie, weekend! You earned it!".
 - **Tasks:** shown in a compressed band so there is more room for the lighter content.
 
 The weekday edition is the standard layout with none of the above.
@@ -160,7 +174,7 @@ The weekday edition is the standard layout with none of the above.
 
 ### 5.1 Approach
 
-Convert the kit's `template.html` into one Jinja2 template. Keep `edition.css`, the table-based grid, and WeasyPrint. Fonts (Chomsky, Libre Franklin, Newsreader) load from the kit's `fonts/` folder. The renderer is WeasyPrint only, never a browser.
+Convert `The-Firstname-Times-Setup-Kit-v17.3/layout/template.html` into one Jinja2 template. Keep that kit's `edition.css`, the table-based grid, and WeasyPrint. Fonts (Chomsky, Libre Franklin, Newsreader) load from the kit's `fonts/` folder. The kit folder is gitignored and is not published. The renderer is WeasyPrint only, never a browser. The kit's own edition is four US Letter pages; this app is one A4 page.
 
 ### 5.2 A4 grid (proposed, verified in milestone 1)
 
@@ -191,6 +205,8 @@ Render, then count pages. If more than one page, drop the lowest-priority item a
 
 ### 6.1 CalDAV (Baïkal)
 
+Calendar and tasks are the same server. Host, username, and password are settings. A fresh install leaves the host empty, and no personal address is written into the code or the default config.
+
 - **Discovery:** list all calendars and task lists on the server with their supported component types (`VEVENT`, `VTODO`). The dashboard lets you tick which ones to include.
 - **Events:** use `search(expand=True)` so recurring events expand correctly.
 - **Tasks:** read `SUMMARY`, `DESCRIPTION`, `DUE`, `PRIORITY`, `STATUS`, `CATEGORIES`. Completed and cancelled tasks are ignored. Recurring tasks show the current occurrence only.
@@ -199,7 +215,8 @@ Render, then count pages. If more than one page, drop the lowest-priority item a
 
 ### 6.2 RSS
 
-- Per feed: URL, name (used as publisher), category (`interest` or `local`), language, weight, max items, enabled.
+- Per feed: URL, name (used as publisher), category (`interest` or `local`), language, weight, max items, enabled. URLs live in settings, not in the fetch code.
+- A fresh install starts with Telex (`https://telex.hu/rss`, local) and Wired (`https://www.wired.com/feed/rss`, interest).
 - Fetch, keep entries from the last 24 h by published time, deduplicate by URL then fuzzy title.
 - Entries with no publish time are excluded by default (setting).
 - OPML import and export.
@@ -222,9 +239,9 @@ Open-Meteo, with location (coordinates) and units in settings.
 | --- | --- | --- |
 | **Sunrise and sunset** | Computed locally from coordinates and date | Works offline. |
 | **Moon phase** | Computed locally | Works offline. Show phase name and illumination. |
-| **Name day** | Static table in the project | Hungarian calendar. The dataset and its license are verified in milestone 2. Toggle on/off. |
-| **On this day** | Wikipedia "on this day" feed | Prefer Hungarian Wikipedia if available, else English (verified in milestone 2). Choose 1-3 short entries by code (for example the ones with the most notable pages), print them as written, and credit Wikipedia (CC BY-SA). |
-| **EUR/HUF, USD/HUF, CHF/HUF** | A free daily-rates API | Candidates: an ECB-based free API (cross-rates computed to HUF) or the Hungarian National Bank (MNB) daily rates. The choice is made in milestone 2. Print the value **with its date and source**. Reference rates update on working days, so weekends and holidays show the last published date. |
+| **Name day** | Static table vendored in the project | Hungarian calendar from [froccsos/nevnapok-json](https://github.com/froccsos/nevnapok-json) (MIT), compiled from a MEK listing last updated in July 1997. Print the day's main names. Works offline. Toggle on/off. Credit the dataset. |
+| **On this day** | Wikipedia "on this day" feed | Language follows the paper language. Request `{lang}.wikipedia.org/api/rest_v1/feed/onthisday/selected/{mm}/{dd}`. If that language is unsupported or the day is empty, use English and record the fallback. Choose 1-3 short entries by code (for example the ones with the most notable pages), print them as written, and credit Wikipedia (CC BY-SA). |
+| **EUR/HUF, USD/HUF, CHF/HUF** | MNB daily rates | Official service, `GetCurrentExchangeRates`, for EUR, USD, and CHF, each quoted as HUF per 1 unit. Print the value **with its rate date and source** (MNB). The bank publishes on working days, so weekends and holidays show the last published date. |
 
 Rules:
 
@@ -251,7 +268,7 @@ Deterministic behavior:
 ### 7.2 Calls (2 per day, plus retries)
 
 1. **News picker.** Input is a numbered list of titles and short snippets plus the edition mood (`normal` or `light`). Output is JSON `{"picks": [{"id": 12, "category": "interest"}, ...]}`. Only IDs come back. The script prints the original headline, publisher and time, so the model cannot alter or invent them. Quotas are enforced in code after the model answers.
-2. **Planner.** Input is tomorrow's tasks and events. Output is JSON with one note per item, up to a character limit.
+2. **Planner.** Input is tomorrow's tasks and events. Output is JSON with one note per item, at most 120 characters. A longer note is rejected.
 
 ### 7.3 Robustness
 
@@ -269,7 +286,7 @@ Deterministic behavior:
 
 ### 7.5 Prompt principles (Hungarian output)
 
-Condensed from the kit's copy rules: plain literal language; no personifying the calendar or tasks; no "X is not Y, it is Z" constructions; no closing kicker; no advice beyond the task's own text; no invented facts; a hard character budget per field. In the light (weekend) mood the tone may be a little warmer, but these rules still apply. Hungarian quality from free models varies, which is another reason the picker returns only IDs.
+Condensed from the kit's copy rules: plain literal language; no personifying the calendar or tasks; no "X is not Y, it is Z" constructions; no closing kicker; no advice beyond the task's own text; no invented facts; each planner note at most 120 characters. In the light (weekend) mood the tone may be a little warmer, but these rules still apply. Hungarian quality from free models varies, which is another reason the picker returns only IDs.
 
 ---
 
@@ -277,7 +294,7 @@ Condensed from the kit's copy rules: plain literal language; no personifying the
 
 ### 8.1 Print
 
-- CUPS `lp` with A4, grayscale, 100% scale, duplex per setting.
+- CUPS `lp` with A4, grayscale, 100% scale. Duplex is on by default, and the operator can turn it off.
 - The worker follows the CUPS job until it completes or fails. "Accepted by CUPS" alone is not treated as printed.
 - Test page and reprint from the dashboard.
 
@@ -294,7 +311,7 @@ Condensed from the kit's copy rules: plain literal language; no personifying the
 - Dashboard actions: **Approve**, **Reject**, **Regenerate** (fresh data, new AS OF time), **Download preview**.
 - Approving prints and uploads what was built. If the data is hours old, use Regenerate.
 - Optional auto-approve at a chosen time (off by default).
-- An edition waiting for approval counts as **produced** for monitoring; a long wait raises an information alert, not a failure.
+- An edition waiting for approval counts as **produced** for monitoring. A wait longer than 1 hour raises an information alert, not a failure.
 
 ### 8.4 Delivery switches
 
@@ -382,8 +399,8 @@ An external status checker (for example Uptime Kuma or any HTTP/JSON monitor) po
   - The worker heartbeat is stale (default: no beat for 2 minutes).
   - The latest acceptable time has passed with no edition built, and none is in progress or awaiting approval.
   - The database is unreadable.
-  - The clock has not synced after boot (past a grace period).
-  - Disk space is critically low.
+  - The clock has not synced after boot, and more than 1 hour has passed.
+  - Free disk space is under 100 MB.
 - **`degraded`:**
   - The last edition ended `done_degraded`.
   - Any source check is red or yellow (Baïkal, feeds, weather, almanac, LLM, Dropbox).
@@ -445,8 +462,8 @@ Field names are stable so a JSON-aware checker can assert on individual fields (
 ### 11.1 Checks
 
 - **Printer:** status via CUPS, polled every minute (state and reasons such as paper out or low toner **where the printer reports them**; a USB printer may only reveal a jam when a job fails).
-- **Other sources:** checked during runs, by the Test buttons, and by an optional hourly light check.
-- **Pi metrics:** disk space, CPU temperature, uptime, Wi-Fi signal, NTP sync.
+- **Other sources:** checked during runs, by the Test buttons, and by an hourly light check. A feed that has just failed is retried about once a minute until it recovers or the dead-feed alert fires.
+- **Pi metrics:** disk space, CPU temperature, uptime, Wi-Fi signal, NTP sync. Disk low (warning) is under 500 MB free. Disk critical is under 100 MB free.
 - **Worker:** heartbeat age.
 
 ### 11.2 Alerts (dashboard banners now, other channels later)
@@ -461,10 +478,10 @@ Shown on the Status page with a severity and dismiss/acknowledge.
 | Degraded edition | Fallbacks were used |
 | Printer problem | CUPS error or job failed |
 | Dropbox problem | 3 failed uploads or expired authorization |
-| Feed dead | A feed fails N times in a row |
-| Waiting for approval | An edition is held for more than N hours (info) |
-| LLM limit | Requests approaching the daily limit |
-| Disk low | Below threshold |
+| Feed dead | A feed has been failing for 6 minutes |
+| Waiting for approval | An edition is held for more than 1 hour (info) |
+| LLM limit | Today's requests have reached 20, or 80% of the daily limit, whichever comes first |
+| Disk low | Free space is under 500 MB |
 
 ### 11.3 Notification channels (later)
 
@@ -516,8 +533,8 @@ data/
 ## 14. Hardware notes
 
 - **Pi 3B+:** fine for this job (section 13).
-- **USB printer, model unknown.** The model matters for one reason: **driver support**. Most modern printers work "driverless" through CUPS/IPP, and many manufacturer-supported models work with a standard driver package. Some cheap "host-based" (GDI-style) models work only with vendor Windows drivers and are unreliable on Linux.
-- What to look at on the label or box: brand and exact model number. In milestone 0, plug it in and check whether CUPS detects it and prints a CLI test page. Checking the model on the OpenPrinting driver database beforehand is worthwhile.
+- **USB printer: a Brother, through CUPS.** The exact model number is written down when it is plugged in, because the driver depends on it. Many Brother printers work in CUPS with no extra driver, over IPP. Many Brother lasers also work with the `printer-driver-brlaser` package. Some host-based (GDI-style) models work only with a vendor Windows driver and are unreliable on Linux.
+- Milestone 0 confirms this unit: CUPS detects it, and `lp` prints a test page. Once the model number is known, check it on the OpenPrinting driver database.
 - **Laser vs inkjet:** a laser is more dependable for a once-a-day job because its output doesn't dry out. An inkjet's nozzles can clog if it sits unused.
 - Also check that the printer can be configured for A4 and grayscale, and set it not to go into a deep sleep that ignores USB wake-ups (varies by model).
 
@@ -529,7 +546,7 @@ data/
 | --- | --- | --- |
 | 0 | **Smoke tests** | Pi boots headless; CUPS prints a test page via `lp` on the USB printer; a script lists Baïkal calendars and tasks; the OpenRouter key answers a test call; a Dropbox app-folder upload works. |
 | 1 | **Static A4 layout** | Fake Hungarian data renders as exactly one A4 page; `ő/ű` are correct in all fonts; the title `{Nickname} Times`, empty-motto collapse and weekend sun icon all render; it prints with sensible margins; render time measured on the Pi. |
-| 2 | **Deterministic edition** | Real CalDAV, RSS, weather, sudoku, xkcd, sunrise/sunset, moon, name day, on this day and the three currency rates fill the page with no LLM; content snapshot saved; overflow loop works; data sources and licenses for name day, on this day and rates decided. This is the fallback paper. |
+| 2 | **Deterministic edition** | Real CalDAV, the Telex and Wired feeds, weather, sudoku, xkcd, sunrise/sunset, moon, the vendored name-day table, on this day in the paper language, and the three MNB rates fill the page with no LLM; content snapshot saved; overflow loop works. This is the fallback paper. |
 | 3 | **Worker and delivery** | Daemon with SQLite state machine and heartbeat, config file, weekday and weekend schedules, catch-up after boot, hold flag, print with job tracking, Dropbox upload, retention. Reliable for days **without any UI**. |
 | 4 | **LLM layer** | News picker and planner with validation, retry, fallback, LLM on/off switch, weekend mood, stored prompts. |
 | 5 | **Dashboard v1 and `/status`** | Login, status tiles, editions list and downloads, approve/reject/regenerate, run now, logs, and the `/status` endpoint. Killing the worker turns `/status` to `down` (503) within about 2 minutes; unplugging the printer turns it `degraded`; stopping the web service makes the endpoint unreachable. |
@@ -547,10 +564,6 @@ Multiple users, internet exposure, editing the page layout in the UI beyond sect
 
 ---
 
-## 17. Remaining unknowns (resolved during the build; none blocks the start)
+## 17. Remaining unknowns
 
-1. **Printer model:** found in milestone 0 when you plug it in.
-2. **Task app and how tasks are stored:** discovered in milestone 0 through the CalDAV listing.
-3. **Data choices:** name day dataset, on-this-day source and currency-rate source, decided in milestone 2.
-4. **Feeds:** you add them in the dashboard (or import an OPML file) once it exists; the deterministic build in milestone 2 uses a small list in the config file.
-5. **Weekend greeting text:** anything short you like; it can be changed in the dashboard at any time.
+The exact Brother model number is written down in milestone 0, when the printer is plugged in. It does not block the rest of the work. Everything else in the earlier unknown list is settled above.
