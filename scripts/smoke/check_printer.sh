@@ -37,10 +37,13 @@ lpstat -p -d 2>/dev/null || true
 
 PRINTER="${PRINTER_NAME:-}"
 if [[ -z "$PRINTER" ]]; then
-  PRINTER="$(lpstat -d 2>/dev/null | awk '{print $NF}' || true)"
+  default_line="$(lpstat -d 2>/dev/null || true)"
+  if [[ "$default_line" == *": "* && "$default_line" != *"no system default"* ]]; then
+    PRINTER="${default_line##*: }"
+  fi
 fi
-if [[ -z "$PRINTER" || "$PRINTER" == "no" ]]; then
-  PRINTER="$(lpstat -p 2>/dev/null | awk '/printer/ {print $2; exit}' || true)"
+if [[ -z "$PRINTER" ]]; then
+  PRINTER="$(lpstat -p 2>/dev/null | awk '/^printer / {print $2; exit}' || true)"
 fi
 if [[ -z "$PRINTER" ]]; then
   echo "FAIL no printer found; add one with lpadmin or the CUPS web UI"
