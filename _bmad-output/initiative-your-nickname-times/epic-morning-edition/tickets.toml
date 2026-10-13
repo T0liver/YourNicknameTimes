@@ -1,0 +1,112 @@
+# Stories in build order. id is stable and is not the order.
+# Ids 1-9 are milestones 0-8. Id 10 is the closing refactor sweep.
+
+[[entry]]
+id = 1
+type = "story"
+title = "Smoke-test the Pi, printer, and accounts"
+description = "The operator proves the headless Pi on a reserved LAN address, a CUPS test page, a Baïkal listing, an OpenRouter call, and a Dropbox app-folder upload, records the Brother model, and leaves the working keys for the secrets file."
+verify = "The operator boots the Pi, lp prints a test page, a script lists calendars and tasks, OpenRouter answers, a file lands in the Dropbox app folder, and the Pi has a fixed LAN address."
+covers = []
+after = []
+hitl = true
+risk = "medium"
+
+[[entry]]
+id = 2
+type = "story"
+title = "Render one static A4 page"
+description = "Owns the Python environment and WeasyPrint libraries, turns the kit grid, CSS, and fonts into the Jinja2 A4 template later stories fill, and the operator prints that page on the Pi and writes down the render time."
+verify = "One A4 PDF shows ő, ű, Hungarian quotes, and a hyphenated headline, a Pi print has usable margins, and the Pi render time is written down."
+covers = ["CAP-1", "CAP-2"]
+after = [1]
+hitl = true
+risk = "medium"
+
+[[entry]]
+id = 3
+type = "story"
+title = "Build the deterministic edition"
+description = "Owns newspaper.db, secrets.env, and the edition folder, and fills story 2's template from live CalDAV, the seed feeds, weather, the daily item, and the almanac as the model-off edition, including the lighter weekend page, overflow drops, and http-only fetches with no shell."
+verify = "A no-model run writes edition.json and one A4 print.pdf, empty blocks collapse, drops are in the run report, and a fixture that still exceeds one page fails with nothing printed."
+covers = ["CAP-1", "CAP-2", "CAP-3", "CAP-4", "CAP-5", "CAP-6", "CAP-7", "CAP-12"]
+after = [2]
+hitl = false
+risk = "high"
+
+[[entry]]
+id = 4
+type = "story"
+title = "Run the worker and deliver"
+description = "Extends story 3's database with runs, jobs, heartbeat, and alerts, and runs a worker that delivers that snapshot: duplex CUPS printing counted only when the job finishes, a trimmed cloud.pdf and preview.png from the same edition.json, Dropbox dated and latest files, hold with reject and regenerate jobs, NTP catch-up, one-day print and upload overrides, and local retention."
+verify = "With no web process, a job marked approved prints only after CUPS finishes and uploads the dated PDF plus latest.pdf, catch-up runs only after NTP sync and only before the deadline, and local files expire while Dropbox files stay."
+covers = ["CAP-1", "CAP-8", "CAP-9"]
+after = [3]
+hitl = false
+risk = "high"
+
+[[entry]]
+id = 5
+type = "story"
+title = "Add the news picker and planner"
+description = "From story 4's compose step, asks OpenRouter for news IDs and one prep note per tomorrow item, retries once, then uses story 3's builder, and stores the prompt, response, model, and request count in story 3's edition folder."
+verify = "A schema failure falls back after one retry and the run is marked degraded, unknown IDs, over-quota picks, and notes over 120 characters are dropped, and the off switch and the titles-only switch build a full edition with no model call."
+covers = ["CAP-7"]
+after = [3, 4]
+hitl = false
+risk = "medium"
+
+[[entry]]
+id = 6
+type = "story"
+title = "Serve the dashboard and /status"
+description = "Adds a localhost web process on story 3's database that inserts story 4's jobs and reads its heartbeat, with one admin login, the home page and its setup checklist, the editions list, approve, reject, regenerate, reprint, re-upload, and run now, plus /status as the only open route, and the operator unplugs the printer to confirm degraded."
+verify = "An operator signs in and approves a held edition while the page shows progress; killing the worker returns 503 within about two minutes, unplugging the printer returns degraded, stopping the web service makes /status unreachable, and a held edition by itself stays ok."
+covers = ["CAP-10", "CAP-11"]
+after = [4, 5]
+hitl = true
+risk = "medium"
+
+[[entry]]
+id = 7
+type = "story"
+title = "Edit every setting from the dashboard"
+description = "Adds every settings group in dashboard.md on story 6's pages, with validation, rollback, and Test buttons for story 3's sources, story 4's printer and Dropbox, and story 5's model, including OPML, the printer picker, both UI languages, the checklist items, secrets shown as saved, and the status-token settings story 8 enforces."
+verify = "Each settings group rejects a bad value, a Test button reports success or the source error, an OPML file round-trips, and the same pages are usable at phone width."
+covers = ["CAP-2", "CAP-3", "CAP-4", "CAP-5", "CAP-6", "CAP-7", "CAP-8", "CAP-9", "CAP-10"]
+after = [6]
+hitl = false
+risk = "high"
+
+[[entry]]
+id = 8
+type = "story"
+title = "Harden LAN access"
+description = "Puts Caddy and Avahi in front of story 6's localhost app, adds the first-run code, rate limits, the firewall, automatic updates, and enforcement of the status token and status-only port stored in story 7, and the operator sets SSH to keys only."
+verify = "The dashboard answers on the LAN only over HTTPS, a stopped app behind Caddy returns 502, /status stays open unless the token is on, and the firewall allows 443 and 22 from the LAN plus the status port only when that port is enabled."
+covers = ["CAP-10", "CAP-11", "CAP-12"]
+after = [7]
+hitl = true
+risk = "high"
+
+[[entry]]
+id = 9
+type = "story"
+title = "Burn in for seven mornings"
+description = "The operator runs seven real hold-mode mornings while a checker on the LAN or VPN polls /status, tunes density and copy during that week, and then decides whether to turn hold mode off."
+verify = "Seven consecutive mornings each produce one A4 page in hold mode, the checker has a record of the polls, and the operator then decides whether to turn hold mode off."
+covers = ["CAP-1", "CAP-8", "CAP-9", "CAP-11"]
+after = [8]
+hitl = true
+risk = "medium"
+
+[[entry]]
+id = 10
+type = "story"
+title = "Refactor sweep"
+description = "Cleans up only debt already recorded in this epic's plans and reviews."
+verify = "Each deferred cleanup item is done or written up as a new story, and a deterministic edition, a held delivery, and /status still pass."
+covers = []
+after = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+hitl = false
+risk = "low"
