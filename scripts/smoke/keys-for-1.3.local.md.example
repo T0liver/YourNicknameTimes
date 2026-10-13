@@ -1,0 +1,37 @@
+# Working keys for story 1.3 (local only — copy to keys-for-1.3.local.md)
+
+Copy this file to `keys-for-1.3.local.md` after milestone 0 smoke tests pass.
+Story 1.3 will own `data/secrets.env` and `newspaper.db`; this note is a handoff, not the app secrets file.
+
+## Pi and network
+
+- Hostname: newspaper
+- Reserved LAN address: 
+- Brother model (from `lpinfo -m` / label / `lsusb`): 
+
+## CalDAV (Baïkal)
+
+- URL: 
+- Username: 
+- Password: 
+- Calendars used (names): 
+- Task lists used (names): 
+
+## OpenRouter
+
+- API key (verify still valid): 
+- Model used in smoke test: 
+
+## Dropbox (app folder)
+
+- App name / folder: 
+- Refresh token (preferred for the app): 
+- App key: 
+- App secret: 
+- Smoke test object path (e.g. `/smoke-2026-10-13.txt`): 
+
+## Smoke run
+
+- Date (UTC or local): 
+- `run_smoke.sh` result: pass / fail
+- Notes: 
