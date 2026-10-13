@@ -64,7 +64,16 @@ def main() -> int:
         timeout=60,
     )
     if resp.status_code != 200:
-        print(f"FAIL upload HTTP {resp.status_code}: {resp.text[:500]}", file=sys.stderr)
+        body = resp.text[:500]
+        if "missing_scope" in body and "files.content.write" in body:
+            print(
+                "FAIL Dropbox token lacks files.content.write; enable it in the app "
+                "permissions, re-authorize, and set DROPBOX_ACCESS_TOKEN or "
+                "DROPBOX_REFRESH_TOKEN in smoke.local.env",
+                file=sys.stderr,
+            )
+        else:
+            print(f"FAIL upload HTTP {resp.status_code}: {body}", file=sys.stderr)
         return 1
 
     meta = resp.json()

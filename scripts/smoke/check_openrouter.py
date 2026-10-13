@@ -30,7 +30,7 @@ def main() -> int:
                 "content": "Reply with exactly one word: ok",
             }
         ],
-        "max_tokens": 16,
+        "max_tokens": 128,
     }
     headers = {
         "Authorization": f"Bearer {key}",
@@ -46,13 +46,25 @@ def main() -> int:
 
     data = resp.json()
     try:
-        content = data["choices"][0]["message"]["content"]
+        message = data["choices"][0]["message"]
     except (KeyError, IndexError, TypeError):
         print(f"FAIL unexpected response: {json.dumps(data)[:500]}", file=sys.stderr)
         return 1
 
+    content = message.get("content")
+    if not (content and str(content).strip()):
+        reasoning = message.get("reasoning")
+        if reasoning and str(reasoning).strip():
+            content = str(reasoning).strip().splitlines()[0][:80]
+        else:
+            print(
+                f"FAIL empty message content: {json.dumps(message)[:400]}",
+                file=sys.stderr,
+            )
+            return 1
+
     used_model = data.get("model", model)
-    print(f"Reply: {content.strip()!r}")
+    print(f"Reply: {str(content).strip()!r}")
     print(f"Model used: {used_model}")
     print("PASS check_openrouter")
     return 0

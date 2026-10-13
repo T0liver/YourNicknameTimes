@@ -23,6 +23,12 @@ def main() -> int:
     password = _req("CALDAV_PASSWORD")
 
     print("== Baïkal CalDAV ==")
+    if "baikal.example" in url or "example.com" in url:
+        print(
+            "FAIL CALDAV_URL is still the smoke.env.example placeholder; set your real Baïkal URL",
+            file=sys.stderr,
+        )
+        return 1
     print(f"URL: {url}")
 
     client = caldav.DAVClient(url=url, username=user, password=password)
