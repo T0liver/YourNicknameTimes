@@ -72,7 +72,9 @@
       <td class="rail-td{% if not has_lead %} full{% endif %}">
         {% if has_weather %}
         <div class="block-label">Időjárás</div>
+        {% if weather.high is defined and weather.low is defined and weather.high is not none and weather.low is not none and weather.high != '' and weather.low != '' %}
         <div class="wx-hl">{{ weather.high }} / {{ weather.low }} <span>{{ weather.hl_label }}</span></div>
+        {% endif %}
         <p class="wx-body">{{ weather.summary }}</p>
         {% if weather.outlook %}
         <table class="wx-out">
@@ -99,7 +101,7 @@
   {% endif %}
 
   {% if band_count %}
-  <table class="band band-{{ band_count }}">
+  <table class="band band-{{ band_count }}{% if weekend %} band-tight{% endif %}">
     <tr>
       {% if has_prep %}
       <td class="{% if band_count == 1 %}full{% else %}l{% endif %}">
@@ -128,7 +130,21 @@
       {% if has_daily %}
       <td class="{% if band_count == 1 %}full{% else %}r{% endif %}">
         <div class="block-label">Napi tétel</div>
+        {% if daily_item is string %}
         <p>{{ daily_item }}</p>
+        {% elif daily_item.kind == "xkcd" %}
+        <figure class="comic">
+          <img src="{{ daily_item.src }}" alt="{{ daily_item.alt | default('') }}">
+          {% if daily_item.alt %}<figcaption>{{ daily_item.alt }}</figcaption>{% endif %}
+          {% if daily_item.credit %}<p class="comic-credit">{{ daily_item.credit }}</p>{% endif %}
+        </figure>
+        {% elif daily_item.kind == "sudoku" %}
+        <table class="sudoku{% if daily_item.large %} sudoku-large{% endif %}">
+          {% for row in daily_item.grid %}
+          <tr>{% for cell in row %}<td>{% if cell %}{{ cell }}{% endif %}</td>{% endfor %}</tr>
+          {% endfor %}
+        </table>
+        {% endif %}
       </td>
       {% endif %}
     </tr>

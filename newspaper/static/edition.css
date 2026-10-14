@@ -393,5 +393,39 @@ td { vertical-align: top; }
 .band-1 .full { width: 7.63in; padding: 0; border-left: 0; }
 .band .block-label { margin-top: 0; padding-top: 0.10in; }
 .band p { font-size: 7.3pt; line-height: 8.8pt; margin: 0; hyphens: auto; }
+.band-tight p { font-size: 6.4pt; line-height: 7.5pt; }
+.band-tight .block-label { padding-top: 0.05in; }
 
 .clear { clear: both; }
+
+.comic { margin: 0.04in 0 0; }
+.comic img { width: 100%; height: auto; }
+.comic figcaption,
+.comic-credit {
+  font-family: "Libre Franklin", sans-serif;
+  font-size: 6.5pt;
+  line-height: 1.25;
+  margin: 0.03in 0 0;
+}
+.sudoku {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin-top: 0.04in;
+}
+.sudoku td {
+  border: 0.4pt solid #111;
+  text-align: center;
+  vertical-align: middle;
+  font-family: "Libre Franklin", sans-serif;
+  font-size: 7pt;
+  line-height: 1.1;
+  height: 0.16in;
+  padding: 0;
+}
+.sudoku tr:nth-child(3n) td { border-bottom-width: 1.2pt; }
+.sudoku td:nth-child(3n) { border-right-width: 1.2pt; }
+.sudoku-large td {
+  font-size: 9pt;
+  height: 0.22in;
+}

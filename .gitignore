@@ -44,6 +44,12 @@ Thumbs.db
 # Installed skill trees
 .agents/
 
+# Local edition data
+data/secrets.env
+data/newspaper.db
+data/editions/
+data/cache/
+
 # Local style reference. Someone else's kit; not part of the published app.
 The-Firstname-Times-Setup-Kit-v17.3/
 

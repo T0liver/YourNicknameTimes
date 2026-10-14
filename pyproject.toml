@@ -11,16 +11,22 @@ dependencies = [
     "weasyprint==69.0",
     "Jinja2",
     "pytest",
+    "requests",
+    "feedparser",
+    "caldav",
+    "Pillow",
+    "astral",
 ]
 
 [project.scripts]
 newspaper-render = "newspaper.render:main"
+newspaper-edition = "newspaper.edition_build:main"
 
 [tool.setuptools.packages.find]
-include = ["newspaper"]
+include = ["newspaper*"]
 
 [tool.setuptools.package-data]
-newspaper = ["static/**/*", "templates/**/*"]
+newspaper = ["static/**/*", "templates/**/*", "data/**/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

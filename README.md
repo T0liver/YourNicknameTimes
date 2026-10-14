@@ -19,3 +19,15 @@ python3 -m venv .venv
 
 Print it with `lp /tmp/edition.pdf`. The command prints a `render_seconds=` line. Write that number down.
 
+## Build a model-off edition
+
+The first run creates the database and a secrets file, then writes today's paper with the model off. The page comes from the calendar, the feeds, weather, one daily item, and the almanac:
+
+```bash
+.venv/bin/newspaper-edition --data-dir data
+```
+
+`data/newspaper.db` starts at volume 1 with an empty calendar host, Telex as the local feed, and Wired as the interest feed. Until a host is saved, the schedule blocks stay empty. `data/secrets.env` is created with mode 0600 and the line `CALDAV_PASSWORD=`. A blank copy of that line is in `data/secrets.env.example`. The edition is `data/editions/YYYY-MM-DD/edition.json` plus `print.pdf`. Any drops are listed in `run.log` in that folder. Volume goes up by one after the PDF is a single page.
+
+`newspaper-render` renders the packaged fixture.
+
