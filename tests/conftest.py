@@ -10,3 +10,4 @@ def block_network(monkeypatch):
         raise requests.ConnectionError("network disabled in tests")
 
     monkeypatch.setattr("newspaper.http.requests.get", deny)
+    monkeypatch.setattr("newspaper.http.requests.post", deny)

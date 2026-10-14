@@ -28,8 +28,8 @@ def keyword_score(text: str, category: str, *, light: bool) -> int:
     return score
 
 
-def rank_news(items: list[dict], *, light: bool) -> list[dict]:
-    """Sort by recency, feed weight, then keyword score, and apply the quotas."""
+def capped_pool(items: list[dict], *, light: bool) -> list[dict]:
+    """Rank, dedupe, cap at 80, and number the survivors from 1."""
     scored = []
     for item in items:
         text = f"{item['title']} {item.get('snippet') or ''}"
@@ -54,10 +54,18 @@ def rank_news(items: list[dict], *, light: bool) -> list[dict]:
         ):
             continue
         kept.append(item)
+    pool = []
+    for index, item in enumerate(kept[:POOL_CAP], start=1):
+        pool.append({**item, "id": index})
+    return pool
+
+
+def rows_from_pool(pool: list[dict]) -> list[dict]:
+    """Keep at most four interest and four local rows, in pool order."""
     chosen = []
     interest = 0
     local = 0
-    for item in kept[:POOL_CAP]:
+    for item in pool:
         category = item["category"]
         if category == "interest" and interest < QUOTA:
             interest += 1
@@ -65,7 +73,24 @@ def rank_news(items: list[dict], *, light: bool) -> list[dict]:
         elif category == "local" and local < QUOTA:
             local += 1
             chosen.append(item)
-    return [_printed(item) for item in chosen]
+    return [news_row(item) for item in chosen]
+
+
+def rank_news(items: list[dict], *, light: bool) -> list[dict]:
+    """Sort by recency, feed weight, then keyword score, and apply the quotas."""
+    return rows_from_pool(capped_pool(items, light=light))
+
+
+def collect_pool(
+    feeds: list[dict],
+    *,
+    now: datetime,
+    keep_undated: bool,
+    light: bool,
+    get: Callable,
+) -> tuple[list[dict], dict]:
+    pooled, status = _fetch(feeds, now, keep_undated, get)
+    return capped_pool(pooled, light=light), status
 
 
 def collect_news(
@@ -76,6 +101,17 @@ def collect_news(
     light: bool,
     get: Callable,
 ) -> tuple[list[dict], dict]:
+    pool, status = collect_pool(
+        feeds,
+        now=now,
+        keep_undated=keep_undated,
+        light=light,
+        get=get,
+    )
+    return rows_from_pool(pool), status
+
+
+def _fetch(feeds: list[dict], now: datetime, keep_undated: bool, get: Callable) -> tuple[list[dict], dict]:
     status: dict[str, str] = {}
     pooled: list[dict] = []
     for feed in feeds:
@@ -99,7 +135,7 @@ def collect_news(
             status[name] = "failed"
             continue
         pooled.extend(rows)
-    return rank_news(pooled, light=light), status
+    return pooled, status
 
 
 def _entries(parsed, feed: dict, now: datetime, keep_undated: bool) -> list[dict]:
@@ -152,6 +188,11 @@ def _published(entry, zone) -> datetime | None:
 def _snippet(entry) -> str:
     raw = entry.get("summary") or entry.get("description") or ""
     return " ".join(str(raw).split())
+
+
+def news_row(item: dict) -> dict:
+    """The printed row: the feed headline, publisher, and time."""
+    return _printed(item)
 
 
 def _printed(item: dict) -> dict:

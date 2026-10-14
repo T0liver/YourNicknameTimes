@@ -38,6 +38,10 @@ def drop_one(edition: dict) -> str | None:
     if cleared:
         return cleared
 
+    note = _clear_prep_note(edition)
+    if note:
+        return note
+
     prep = edition.get("prep")
     if isinstance(prep, list) and len(prep) > 1:
         prep.pop()
@@ -60,6 +64,23 @@ def _is_floor_line(line: object) -> bool:
         return False
     label = str(line.get("label", "")).strip().casefold()
     return label in FLOOR_LABELS
+
+
+def _clear_prep_note(edition: dict) -> str | None:
+    prep = edition.get("prep")
+    if not isinstance(prep, list):
+        return None
+    for index in range(len(prep) - 1, -1, -1):
+        item = prep[index]
+        if not isinstance(item, dict):
+            continue
+        note = item.get("note")
+        if not isinstance(note, str) or not note:
+            continue
+        line = item.get("line", "")
+        prep[index] = line if isinstance(line, str) else ""
+        return "prep note"
+    return None
 
 
 def _clear_description(edition: dict) -> str | None:

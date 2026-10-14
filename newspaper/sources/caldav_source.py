@@ -36,7 +36,7 @@ class _Item:
 
 
 def empty_schedule() -> dict:
-    return {"today": [], "this_week": [], "prep": [], "due": [], "overdue": []}
+    return {"today": [], "this_week": [], "prep": [], "prep_items": [], "due": [], "overdue": []}
 
 
 def collect_caldav(
@@ -247,7 +247,14 @@ def _place(events: list[_Item], tasks: list[_Item], today: date) -> dict:
         week_rows.append(((item.when, item.clock or "", item.summary), _week_row(item)))
 
     def add_prep(item: _Item) -> None:
-        prep_rows.append(((item.clock or "", item.summary), _prep_line(item)))
+        prep_rows.append(
+            (
+                (item.clock or "", item.summary),
+                _prep_line(item),
+                _prep_title(item),
+                item.description,
+            )
+        )
 
     for item in events:
         if item.when == today or _spans_today(item, today):
@@ -276,10 +283,14 @@ def _place(events: list[_Item], tasks: list[_Item], today: date) -> dict:
     prep_rows.sort(key=lambda pair: pair[0])
     due_rows.sort(key=lambda pair: (pair[0], pair[1]))
     overdue_rows.sort(key=lambda pair: (pair[0], pair[1]))
+    prep_items = []
+    for index, (_, _line, title, description) in enumerate(prep_rows, start=1):
+        prep_items.append({"id": index, "title": title, "description": description})
     return {
         "today": [row for _, row in today_rows],
         "this_week": [row for _, row in week_rows],
-        "prep": [row for _, row in prep_rows],
+        "prep": [line for _, line, _, _ in prep_rows],
+        "prep_items": prep_items,
         "due": [row for _, _, row in due_rows],
         "overdue": [row for _, _, row in overdue_rows],
     }
@@ -307,10 +318,15 @@ def _week_row(item: _Item) -> dict:
     return row
 
 
-def _prep_line(item: _Item) -> str:
+def _prep_title(item: _Item) -> str:
     text = f"{item.clock} {item.summary}".strip() if item.clock else item.summary
     if item.place:
         text = f"{text} ({item.place})"
+    return text
+
+
+def _prep_line(item: _Item) -> str:
+    text = _prep_title(item)
     if item.description:
         text = f"{text}: {item.description[:_DESCRIPTION_LIMIT]}"
     return text

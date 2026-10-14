@@ -107,7 +107,12 @@
       <td class="{% if band_count == 1 %}full{% else %}l{% endif %}">
         <div class="block-label">Holnapra</div>
         {% for item in prep %}
+        {% if item is mapping %}
+        <p>{{ item.line }}</p>
+        {% if item.note %}<p class="prep-note">{{ item.note }}</p>{% endif %}
+        {% else %}
         <p>{{ item }}</p>
+        {% endif %}
         {% endfor %}
       </td>
       {% endif %}

@@ -8,13 +8,14 @@ import pytest
 
 from newspaper.db import (
     DEFAULT_SETTINGS,
+    SECRETS_TEXT,
     init_data,
     load_settings,
     save_settings,
 )
 from newspaper.edition_build import build_edition, format_dateline, main, run
 from newspaper.fixtures import edition_with, fixture_edition
-from newspaper.http import UnsafeURL, get
+from newspaper.http import UnsafeURL, get, post
 from newspaper.overflow import drop_one
 from newspaper.render import build_document, render_edition, render_html
 
@@ -218,6 +219,90 @@ def test_render_exception_deletes_a_partial_pdf(tmp_path):
     assert "build failed: Pango missing" in log
 
 
+def test_a_nested_prep_note_drops_before_a_whole_line():
+    edition = {
+        "prep": [
+            "első",
+            {"line": "második", "note": "korábbi"},
+            {"line": "harmadik", "note": "utolsó"},
+        ]
+    }
+    assert drop_one(edition) == "prep note"
+    assert edition["prep"][2] == "harmadik"
+    assert edition["prep"][1] == {"line": "második", "note": "korábbi"}
+    assert drop_one(edition) == "prep note"
+    assert edition["prep"][1] == "második"
+    assert drop_one(edition) == "prep note"
+    assert edition["prep"] == ["első", "második"]
+
+
+def test_overflow_drops_one_planner_note_and_prints(tmp_path):
+    snapshot = edition_with(
+        news=[{"headline": "Egy", "publisher": "Telex", "time": "05:00"}],
+        today=[],
+        this_week=[],
+        weather=None,
+        almanac={"lines": list(FLOOR_LINES)},
+        prep=[{"line": "07:40 Vonat", "note": "Jegy a pénztárnál."}],
+        due=[],
+        overdue=[],
+        daily_item="",
+    )
+    snapshot["meta"] = {"mode": "on", "model": "demo", "trims": [], "sources": {}}
+    calls = {"n": 0}
+
+    def render(edition, path):
+        calls["n"] += 1
+        path.write_bytes(b"%PDF-1.4\n")
+        if calls["n"] == 1:
+            return 2
+        return 1
+
+    edition_dir = tmp_path / "edition"
+    assert build_edition(snapshot, edition_dir, render_pdf=render) == 0
+    written = _read(edition_dir)
+    assert written["prep"] == ["07:40 Vonat"]
+    assert written["meta"]["trims"] == ["prep note"]
+    assert written["meta"]["mode"] == "on"
+    assert written["meta"]["model"] == "demo"
+    assert "drop: prep note" in (edition_dir / "run.log").read_text(encoding="utf-8")
+    assert calls["n"] == 2
+    assert (edition_dir / "print.pdf").is_file()
+
+
+def test_a_page_still_over_after_the_note_is_gone_fails(tmp_path):
+    snapshot = edition_with(
+        news=[{"headline": "Egy", "publisher": "Telex", "time": "05:00"}],
+        today=[],
+        this_week=[],
+        weather=None,
+        almanac={"lines": list(FLOOR_LINES)},
+        prep=[{"line": "07:40 Vonat", "note": "Jegy a pénztárnál."}],
+        due=[],
+        overdue=[],
+        daily_item="",
+    )
+    snapshot["meta"] = {"mode": "on", "model": "demo", "trims": [], "sources": {}}
+
+    def render(edition, path):
+        path.write_bytes(b"%PDF-partial")
+        return 2
+
+    edition_dir = tmp_path / "edition"
+    assert build_edition(snapshot, edition_dir, render_pdf=render) == 1
+    written = _read(edition_dir)
+    assert written["prep"] == ["07:40 Vonat"]
+    assert written["meta"]["trims"] == ["prep note"]
+    assert written["meta"]["mode"] == "on"
+    assert not (edition_dir / "print.pdf").exists()
+
+
+def test_a_prep_note_prints_under_its_line():
+    html = render_html(edition_with(prep=[{"line": "07:40 Vonat", "note": "Jegy."}]))
+    assert 'class="prep-note"' in html
+    assert html.index("07:40 Vonat") < html.index("Jegy.")
+
+
 def test_drop_order_keeps_the_floors():
     edition = {
         "almanac": {
@@ -284,7 +369,7 @@ def test_no_nickname_uses_the_default_nameplate_and_omits_the_motto(tmp_path):
     assert written["motto"] == ""
     assert written["dateline"] == "Vol. 1 · 2026. október 14. · szerda · AS OF 09:55"
     assert written["weekend"] is False
-    assert written["meta"]["mode"] == "off"
+    assert written["meta"]["mode"] == "degraded"
     assert written["meta"]["model"] is None
     assert written["meta"]["as_of"] == "2026-10-14T09:55+02:00"
     assert written["meta"]["volume"] == 1
@@ -390,12 +475,8 @@ def test_fresh_database_seeds_defaults_and_keeps_five_versions(tmp_path):
             ("Wired", "https://www.wired.com/feed/rss", "interest"),
         ]
         secrets = data / "secrets.env"
-        assert secrets.read_text(encoding="utf-8") == (
-            "CALDAV_PASSWORD=\n"
-            "DROPBOX_REFRESH_TOKEN=\n"
-            "DROPBOX_APP_KEY=\n"
-            "DROPBOX_APP_SECRET=\n"
-        )
+        assert secrets.read_text(encoding="utf-8") == SECRETS_TEXT
+        assert Path("data/secrets.env.example").read_text(encoding="utf-8") == SECRETS_TEXT
         assert stat.S_IMODE(secrets.stat().st_mode) == 0o600
         assert "CALDAV_PASSWORD" not in conn.execute(
             "SELECT body FROM settings ORDER BY version DESC LIMIT 1"
@@ -448,6 +529,36 @@ def test_existing_settings_gain_only_missing_delivery_keys(tmp_path):
         conn.close()
 
 
+def test_existing_openrouter_line_is_not_rewritten(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    secrets = data / "secrets.env"
+    secrets.write_text("CALDAV_PASSWORD=keep\nOPENROUTER_API_KEY=sk-keep\n", encoding="utf-8")
+    conn = init_data(data)
+    conn.close()
+    assert secrets.read_text(encoding="utf-8") == "CALDAV_PASSWORD=keep\nOPENROUTER_API_KEY=sk-keep\n"
+
+
+def test_existing_settings_gain_the_model_keys(tmp_path):
+    data = tmp_path / "data"
+    conn = init_data(data)
+    try:
+        body = load_settings(conn)
+        for key in ("model_on", "model_name", "send_task_descriptions"):
+            body.pop(key)
+        save_settings(conn, body)
+    finally:
+        conn.close()
+    conn = init_data(data)
+    try:
+        loaded = load_settings(conn)
+        assert loaded["model_on"] is True
+        assert loaded["model_name"] == "openrouter/free"
+        assert loaded["send_task_descriptions"] is True
+    finally:
+        conn.close()
+
+
 def test_existing_secrets_file_is_left_alone(tmp_path):
     data = tmp_path / "data"
     data.mkdir()
@@ -455,7 +566,7 @@ def test_existing_secrets_file_is_left_alone(tmp_path):
     secrets.write_text("CALDAV_PASSWORD=keep\n", encoding="utf-8")
     conn = init_data(data)
     conn.close()
-    assert secrets.read_text(encoding="utf-8") == "CALDAV_PASSWORD=keep\n"
+    assert secrets.read_text(encoding="utf-8") == "CALDAV_PASSWORD=keep\nOPENROUTER_API_KEY=\n"
     assert stat.S_IMODE(secrets.stat().st_mode) == 0o600
 
 
@@ -502,6 +613,27 @@ class _Response:
         self.url = url
         self.headers = {"Location": location} if location else {}
         self.is_redirect = location is not None and status in {301, 302, 303, 307, 308}
+
+
+def test_post_checks_the_scheme_and_does_not_follow_redirects(monkeypatch):
+    calls = []
+
+    def fake_post(url, **kwargs):
+        calls.append((url, kwargs))
+        return _Response(302, url, "https://example.test/next")
+
+    monkeypatch.setattr("newspaper.http.requests.post", fake_post)
+    with pytest.raises(UnsafeURL):
+        post("file:///etc/passwd")
+    assert calls == []
+    response = post("https://openrouter.ai/api/v1/chat/completions", json={"a": 1}, timeout=60)
+    assert response.status_code == 302
+    assert calls == [
+        (
+            "https://openrouter.ai/api/v1/chat/completions",
+            {"json": {"a": 1}, "allow_redirects": False, "timeout": 60},
+        )
+    ]
 
 
 def test_file_url_raises_without_a_request_or_a_shell(monkeypatch):

@@ -23,7 +23,7 @@ from newspaper.sources.daily import (
     count_solutions,
     generate_sudoku,
 )
-from newspaper.sources.news import collect_news, keyword_score, rank_news
+from newspaper.sources.news import capped_pool, collect_news, keyword_score, rank_news
 from newspaper.sources.weather import forecast_url
 
 ZONE = ZoneInfo("Europe/Budapest")
@@ -385,6 +385,8 @@ def test_keyword_scores_and_light_mood_break_a_tie():
     light = [row["headline"] for row in rank_news([plain, hobby], light=True)]
     assert neutral == ["Városi hír", "kert háború"]
     assert light == ["kert háború", "Városi hír"]
+    pool = capped_pool([plain, hobby], light=False)
+    assert [(item["id"], item["title"]) for item in pool] == [(1, "Városi hír"), (2, "kert háború")]
 
 
 def test_rank_uses_recency_then_weight_then_keeps_four_of_each():
@@ -531,8 +533,11 @@ def test_full_collect_matches_the_payloads_and_the_pdf_reads_that_json(tmp_path)
     assert run(data, now=WHEN, render_pdf=render, get=router, client=Client(calendars)) == 0
     written = _read(data, "2026-10-14")
     assert seen == [written]
-    assert written["meta"]["mode"] == "off"
+    assert written["meta"]["mode"] == "degraded"
     assert written["meta"]["model"] is None
+    assert "model" not in written["meta"]["sources"]
+    assert "prep_items" not in written
+    assert not (data / "editions" / "2026-10-14" / "llm").exists()
     assert PASSWORD not in json.dumps(written)
     assert [row["headline"] for row in written["news"]] == [
         "A lab note on music hardware!",
@@ -620,7 +625,7 @@ def test_weather_failure_omits_numbers_and_leaves_the_other_blocks(tmp_path):
     assert written["news"]
     assert written["today"]
     assert written["meta"]["sources"]["weather"] == "failed"
-    assert written["meta"]["mode"] == "off"
+    assert written["meta"]["mode"] == "degraded"
 
 
 def test_xkcd_failure_on_monday_prints_sudoku_and_the_run_continues(tmp_path):
@@ -833,6 +838,27 @@ def test_xkcd_skips_interactive_wide_and_tall_comics(tmp_path):
         assert "https://xkcd.com/4/info.0.json" not in router.calls
     finally:
         conn.close()
+
+
+def test_tomorrow_items_carry_id_title_and_description():
+    calendar = Calendar(
+        [
+            _event(
+                "train",
+                "Vonat",
+                datetime(2026, 10, 15, 7, 40, tzinfo=ZONE),
+                description="jegyet venni",
+            )
+        ],
+        supported=("VEVENT",),
+    )
+    settings = {**DEFAULT_SETTINGS, "caldav_host": "https://cal.example/dav/"}
+    blocks, status = collect_caldav(settings, "", WHEN, client=Client([calendar]))
+    assert status["caldav"] == "ok"
+    assert blocks["prep"] == ["07:40 Vonat: jegyet venni"]
+    assert blocks["prep_items"] == [
+        {"id": 1, "title": "07:40 Vonat", "description": "jegyet venni"}
+    ]
 
 
 def test_a_failed_calendar_keeps_the_events_already_read():

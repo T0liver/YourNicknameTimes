@@ -393,6 +393,7 @@ td { vertical-align: top; }
 .band-1 .full { width: 7.63in; padding: 0; border-left: 0; }
 .band .block-label { margin-top: 0; padding-top: 0.10in; }
 .band p { font-size: 7.3pt; line-height: 8.8pt; margin: 0; hyphens: auto; }
+.band p.prep-note { margin: 0 0 0.035in 0.08in; }
 .band-tight p { font-size: 6.4pt; line-height: 7.5pt; }
 .band-tight .block-label { padding-top: 0.05in; }
 

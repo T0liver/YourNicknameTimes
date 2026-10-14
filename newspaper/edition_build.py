@@ -1,4 +1,4 @@
-"""Write a model-off edition.json and render print.pdf from that file."""
+"""Write edition.json and render print.pdf from that file."""
 
 from __future__ import annotations
 
@@ -15,17 +15,19 @@ from newspaper.db import (
     init_data,
     load_feeds,
     load_settings,
-    read_password,
+    read_secrets,
     record_edition,
     remember_puzzle,
 )
 from newspaper.http import get as http_get
+from newspaper.http import post as http_post
+from newspaper.llm import apply_model
 from newspaper.overflow import drop_one
 from newspaper.render import build_document, render_edition
 from newspaper.sources.almanac import collect_almanac
 from newspaper.sources.caldav_source import collect_caldav
 from newspaper.sources.daily import collect_daily
-from newspaper.sources.news import collect_news
+from newspaper.sources.news import collect_pool, rows_from_pool
 from newspaper.sources.weather import collect_weather
 
 HU_MONTHS = (
@@ -83,9 +85,14 @@ def assemble_snapshot(
     get=None,
     client=None,
     rng=None,
+    post=None,
+    edition_dir: Path | None = None,
+    api_key: str = "",
 ) -> tuple[dict, list[str]]:
     if get is None:
         get = http_get
+    if post is None:
+        post = http_post
     zone_name = settings.get("timezone") or "Europe/Budapest"
     local = started.astimezone(ZoneInfo(zone_name))
     weekend = bool(settings.get("weekend_edition")) and local.weekday() >= 5
@@ -101,18 +108,22 @@ def assemble_snapshot(
         get=get,
     )
     sources.update(caldav_status)
+    prep_items = list(schedule.pop("prep_items", []))
 
+    pool: list[dict] = []
     try:
-        news, feed_status = collect_news(
+        pool, feed_status = collect_pool(
             load_feeds(conn),
             now=local,
             keep_undated=bool(settings.get("keep_undated_news")),
             light=light,
             get=get,
         )
+        news = rows_from_pool(pool)
         sources["feeds"] = feed_status
     except Exception:
         news = []
+        pool = []
         sources["feeds"] = "failed"
 
     try:
@@ -174,6 +185,16 @@ def assemble_snapshot(
             "timezone": zone_name,
         },
     }
+    apply_model(
+        snapshot,
+        settings,
+        pool,
+        prep_items,
+        api_key=api_key,
+        light=light,
+        edition_dir=edition_dir,
+        post=post,
+    )
     return snapshot, notes
 
 
@@ -205,8 +226,8 @@ def build_edition(snapshot: dict, edition_dir: Path, *, render_pdf=None, notes: 
 
     for _ in range(_DROP_LIMIT):
         meta = dict(working.get("meta") or {})
-        meta["mode"] = "off"
-        meta["model"] = None
+        meta.setdefault("mode", "off")
+        meta.setdefault("model", None)
         meta["trims"] = list(trims)
         working["meta"] = meta
         json_path.write_text(
@@ -240,7 +261,7 @@ def build_edition(snapshot: dict, edition_dir: Path, *, render_pdf=None, notes: 
     return 1
 
 
-def run(data_dir: Path, *, now: datetime | None = None, render_pdf=None, get=None, client=None, rng=None) -> int:
+def run(data_dir: Path, *, now: datetime | None = None, render_pdf=None, get=None, client=None, rng=None, post=None) -> int:
     data_dir = Path(data_dir)
     conn = init_data(data_dir)
     try:
@@ -251,16 +272,20 @@ def run(data_dir: Path, *, now: datetime | None = None, render_pdf=None, get=Non
             started = started.replace(tzinfo=zone)
         else:
             started = started.astimezone(zone)
+        edition_dir = data_dir / "editions" / started.date().isoformat()
+        secrets = read_secrets(data_dir / "secrets.env")
         snapshot, notes = assemble_snapshot(
             settings,
             started,
             conn=conn,
-            password=read_password(data_dir / "secrets.env"),
+            password=secrets.get("CALDAV_PASSWORD", ""),
             get=get,
             client=client,
             rng=rng,
+            post=post,
+            edition_dir=edition_dir,
+            api_key=secrets.get("OPENROUTER_API_KEY", ""),
         )
-        edition_dir = data_dir / "editions" / started.date().isoformat()
         xkcd_id = (snapshot.get("meta") or {}).get("sources", {}).pop("xkcd_id", None)
         code = build_edition(snapshot, edition_dir, render_pdf=render_pdf, notes=notes)
         if code == 0:
@@ -277,7 +302,7 @@ def run(data_dir: Path, *, now: datetime | None = None, render_pdf=None, get=Non
 
 
 def main(argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description="Write a model-off edition and its one-page PDF.")
+    parser = argparse.ArgumentParser(description="Write an edition and its one-page PDF.")
     parser.add_argument("--data-dir", default="data", help="Directory for the database and editions")
     args = parser.parse_args(argv)
     code = run(Path(args.data_dir))

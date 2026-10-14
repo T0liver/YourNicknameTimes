@@ -1,4 +1,4 @@
-"""HTTP GET that allows http and https only, including each redirect."""
+"""HTTP helpers that allow http and https only."""
 
 from __future__ import annotations
 
@@ -33,3 +33,11 @@ def get(url: str, **kwargs):
         current = urljoin(response.url, location)
     check_url(current)
     raise UnsafeURL("too many redirects")
+
+
+def post(url: str, **kwargs):
+    """POST ``url``. Check the scheme and do not follow redirects."""
+    check_url(url)
+    kwargs.pop("allow_redirects", None)
+    timeout = kwargs.pop("timeout", 60)
+    return requests.post(url, allow_redirects=False, timeout=timeout, **kwargs)

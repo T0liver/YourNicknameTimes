@@ -19,15 +19,15 @@ python3 -m venv .venv
 
 Print it with `lp /tmp/edition.pdf`. The command prints a `render_seconds=` line. Write that number down.
 
-## Build a model-off edition
+## Build an edition
 
-The first run creates the database and a secrets file, then writes today's paper with the model off. The page comes from the calendar, the feeds, weather, one daily item, and the almanac:
+The first run creates the database and a secrets file, then writes today's paper. The page comes from the calendar, the feeds, weather, one daily item, and the almanac. The model switch defaults to on. An empty OpenRouter key leaves the news and the prep list on the deterministic rules and marks the run degraded:
 
 ```bash
 .venv/bin/newspaper-edition --data-dir data
 ```
 
-`data/newspaper.db` starts at volume 1 with an empty calendar host, Telex as the local feed, and Wired as the interest feed. Until a host is saved, the schedule blocks stay empty. `data/secrets.env` is created with mode 0600. A fresh file has `CALDAV_PASSWORD=`, `DROPBOX_REFRESH_TOKEN=`, `DROPBOX_APP_KEY=`, and `DROPBOX_APP_SECRET=`. The same blank lines are in `data/secrets.env.example`. The edition is `data/editions/YYYY-MM-DD/edition.json` plus `print.pdf`. Any drops are listed in `run.log` in that folder. Volume goes up by one after the PDF is a single page.
+`data/newspaper.db` starts at volume 1 with an empty calendar host, Telex as the local feed, and Wired as the interest feed. Until a host is saved, the schedule blocks stay empty. `data/secrets.env` is created with mode 0600. A fresh file has `CALDAV_PASSWORD=`, `DROPBOX_REFRESH_TOKEN=`, `DROPBOX_APP_KEY=`, `DROPBOX_APP_SECRET=`, and `OPENROUTER_API_KEY=`. The same blank lines are in `data/secrets.env.example`. An existing secrets file keeps its lines and gains `OPENROUTER_API_KEY=` when that line is missing. The edition is `data/editions/YYYY-MM-DD/edition.json` plus `print.pdf`. Any drops are listed in `run.log` in that folder. Volume goes up by one after the PDF is a single page.
 
 `newspaper-render` renders the packaged fixture.
 

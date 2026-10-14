@@ -14,6 +14,7 @@ SECRETS_TEXT = (
     "DROPBOX_REFRESH_TOKEN=\n"
     "DROPBOX_APP_KEY=\n"
     "DROPBOX_APP_SECRET=\n"
+    "OPENROUTER_API_KEY=\n"
 )
 
 DEFAULT_SETTINGS = {
@@ -40,6 +41,9 @@ DEFAULT_SETTINGS = {
     "weekend_edition": True,
     "weekend_mood": "light",
     "show_sun": True,
+    "model_on": True,
+    "model_name": "openrouter/free",
+    "send_task_descriptions": True,
     "volume": 1,
     "weekday_start": "06:30",
     "weekend_start": "08:00",
@@ -266,7 +270,22 @@ def record_edition(conn: sqlite3.Connection, edition_date: str, volume: int, dir
 def ensure_secrets(path: Path) -> None:
     if not path.exists():
         path.write_text(SECRETS_TEXT, encoding="utf-8")
+    elif not _secret_defined(path, "OPENROUTER_API_KEY"):
+        existing = path.read_bytes()
+        prefix = b"" if not existing or existing.endswith(b"\n") else b"\n"
+        with path.open("ab") as handle:
+            handle.write(prefix + b"OPENROUTER_API_KEY=\n")
     path.chmod(0o600)
+
+
+def _secret_defined(path: Path, name: str) -> bool:
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _value = line.split("=", 1)
+        if key.strip() == name:
+            return True
+    return False
 
 
 def load_feeds(conn: sqlite3.Connection) -> list[dict]:
@@ -325,5 +344,5 @@ def read_secrets(path: Path) -> dict[str, str]:
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, value = line.split("=", 1)
-        found[key] = value
+        found[key.strip()] = value
     return found
