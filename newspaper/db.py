@@ -9,7 +9,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 SETTINGS_VERSIONS = 5
-SECRETS_TEXT = "CALDAV_PASSWORD=\n"
+SECRETS_TEXT = (
+    "CALDAV_PASSWORD=\n"
+    "DROPBOX_REFRESH_TOKEN=\n"
+    "DROPBOX_APP_KEY=\n"
+    "DROPBOX_APP_SECRET=\n"
+)
 
 DEFAULT_SETTINGS = {
     "caldav_host": "",
@@ -36,6 +41,22 @@ DEFAULT_SETTINGS = {
     "weekend_mood": "light",
     "show_sun": True,
     "volume": 1,
+    "weekday_start": "06:30",
+    "weekend_start": "08:00",
+    "latest_acceptable": "10:00",
+    "hold_mode": True,
+    "auto_approve": False,
+    "auto_approve_time": "",
+    "print_enabled": True,
+    "upload_enabled": True,
+    "override_date": "",
+    "override_print": None,
+    "override_upload": None,
+    "cloud_level": "trimmed",
+    "local_retention_days": 30,
+    "dropbox_retention_days": None,
+    "duplex": True,
+    "printer_name": "",
 }
 
 SEED_FEEDS = (
@@ -100,6 +121,51 @@ CREATE TABLE IF NOT EXISTS rate_history (
     rate_date TEXT NOT NULL,
     recorded_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS runs (
+    id INTEGER PRIMARY KEY,
+    edition_date TEXT NOT NULL,
+    started_at TEXT NOT NULL,
+    finished_at TEXT,
+    status TEXT NOT NULL,
+    printed INTEGER NOT NULL DEFAULT 0,
+    uploaded INTEGER NOT NULL DEFAULT 0,
+    cups_job_id TEXT,
+    upload_attempts INTEGER NOT NULL DEFAULT 0,
+    delivery TEXT,
+    timing TEXT NOT NULL,
+    sources TEXT NOT NULL,
+    model TEXT,
+    trims TEXT NOT NULL,
+    directory TEXT
+);
+
+CREATE TABLE IF NOT EXISTS jobs (
+    id INTEGER PRIMARY KEY,
+    run_id INTEGER,
+    edition_date TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    status TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS heartbeat (
+    id INTEGER PRIMARY KEY,
+    recorded_at TEXT NOT NULL,
+    ntp_synced INTEGER NOT NULL,
+    printer_state TEXT NOT NULL,
+    disk_free_mb REAL NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS alerts (
+    id INTEGER PRIMARY KEY,
+    created_at TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    level TEXT NOT NULL,
+    message TEXT NOT NULL,
+    edition_date TEXT
+);
 """
 
 
@@ -134,6 +200,15 @@ def seed(conn: sqlite3.Connection) -> None:
     settings_count = conn.execute("SELECT COUNT(*) AS n FROM settings").fetchone()["n"]
     if settings_count == 0:
         save_settings(conn, deepcopy(DEFAULT_SETTINGS))
+        return
+    body = load_settings(conn)
+    added = False
+    for key, value in DEFAULT_SETTINGS.items():
+        if key not in body:
+            body[key] = deepcopy(value)
+            added = True
+    if added:
+        save_settings(conn, body)
 
 
 def save_settings(conn: sqlite3.Connection, body: dict) -> int:
@@ -239,9 +314,16 @@ def remember_rates(conn: sqlite3.Connection, rates: list[tuple[str, str, str]]) 
 
 
 def read_password(path: Path) -> str:
+    return read_secrets(path).get("CALDAV_PASSWORD", "")
+
+
+def read_secrets(path: Path) -> dict[str, str]:
     if not path.is_file():
-        return ""
+        return {}
+    found = {}
     for line in path.read_text(encoding="utf-8").splitlines():
-        if line.startswith("CALDAV_PASSWORD="):
-            return line.split("=", 1)[1]
-    return ""
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        found[key] = value
+    return found

@@ -301,7 +301,10 @@ def _week_row(item: _Item) -> dict:
     text = f"{item.clock} {item.summary}".strip() if item.clock else item.summary
     if item.place:
         text = f"{text} ({item.place})"
-    return {"day": _day_name(item.when), "text": text}
+    row = {"day": _day_name(item.when), "text": text}
+    if item.place:
+        row["place"] = item.place
+    return row
 
 
 def _prep_line(item: _Item) -> str:
@@ -313,10 +316,11 @@ def _prep_line(item: _Item) -> str:
     return text
 
 
-def _due_line(item: _Item) -> str:
+def _due_line(item: _Item) -> str | dict:
     text = f"{_day_name(item.when)}: {item.summary}"
     if item.description:
-        text = f"{text}: {item.description[:_DESCRIPTION_LIMIT]}"
+        detail = item.description[:_DESCRIPTION_LIMIT]
+        return {"text": f"{text}: {detail}", "detail": detail}
     return text
 
 

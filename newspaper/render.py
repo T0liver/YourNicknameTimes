@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import subprocess
+import tempfile
 import time
+from copy import deepcopy
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -40,6 +43,57 @@ def render_edition(out_path: str | Path, edition: dict | None = None) -> float:
     started = time.perf_counter()
     HTML(string=html, base_url=BASE_URL).write_pdf(target=str(out_path))
     return time.perf_counter() - started
+
+
+_CLOUD_FIELDS = ("dek", "place", "detail", "attendees")
+
+
+def trim_cloud(edition: dict) -> dict:
+    """Drop cloud-only fields. The print snapshot stays on disk."""
+    trimmed = deepcopy(edition)
+    trimmed["prep"] = []
+    _drop_cloud_fields(trimmed)
+    return trimmed
+
+
+def _drop_cloud_fields(node) -> None:
+    if isinstance(node, dict):
+        place = node.get("place")
+        text = node.get("text")
+        if isinstance(text, str) and isinstance(place, str) and place:
+            suffix = f" ({place})"
+            if text.endswith(suffix):
+                node["text"] = text[: -len(suffix)].rstrip()
+        for key in _CLOUD_FIELDS:
+            node.pop(key, None)
+        for value in node.values():
+            _drop_cloud_fields(value)
+    elif isinstance(node, list):
+        for item in node:
+            _drop_cloud_fields(item)
+
+
+def render_cloud(out_path: str | Path, edition: dict, level: str = "trimmed") -> float:
+    payload = edition if level == "full" else trim_cloud(edition)
+    return render_edition(out_path, payload)
+
+
+def render_preview(out_path: str | Path, edition: dict) -> None:
+    """Write the full print page as one PNG."""
+    destination = Path(out_path)
+    with tempfile.TemporaryDirectory() as tmp:
+        pdf_path = Path(tmp) / "page.pdf"
+        render_edition(pdf_path, edition)
+        prefix = str(destination.with_suffix(""))
+        result = subprocess.run(
+            ["pdftocairo", "-png", "-singlefile", str(pdf_path), prefix],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    if result.returncode != 0 or not destination.is_file():
+        detail = (result.stderr or result.stdout or "pdftocairo failed").strip()
+        raise RuntimeError(detail)
 
 
 def main(argv: list[str] | None = None) -> None:

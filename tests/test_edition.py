@@ -371,8 +371,18 @@ def test_fresh_database_seeds_defaults_and_keeps_five_versions(tmp_path):
             row["name"]
             for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
         }
-        assert {"settings", "feeds", "editions", "puzzle_history", "rate_history"} <= tables
-        assert tables.isdisjoint({"runs", "jobs", "heartbeat", "alerts", "run_events", "health_checks", "admin"})
+        assert {
+            "settings",
+            "feeds",
+            "editions",
+            "puzzle_history",
+            "rate_history",
+            "runs",
+            "jobs",
+            "heartbeat",
+            "alerts",
+        } <= tables
+        assert tables.isdisjoint({"run_events", "health_checks", "admin"})
         assert load_settings(conn) == DEFAULT_SETTINGS
         feeds = conn.execute("SELECT name, url, category FROM feeds ORDER BY id").fetchall()
         assert [(row["name"], row["url"], row["category"]) for row in feeds] == [
@@ -380,7 +390,12 @@ def test_fresh_database_seeds_defaults_and_keeps_five_versions(tmp_path):
             ("Wired", "https://www.wired.com/feed/rss", "interest"),
         ]
         secrets = data / "secrets.env"
-        assert secrets.read_text(encoding="utf-8") == "CALDAV_PASSWORD=\n"
+        assert secrets.read_text(encoding="utf-8") == (
+            "CALDAV_PASSWORD=\n"
+            "DROPBOX_REFRESH_TOKEN=\n"
+            "DROPBOX_APP_KEY=\n"
+            "DROPBOX_APP_SECRET=\n"
+        )
         assert stat.S_IMODE(secrets.stat().st_mode) == 0o600
         assert "CALDAV_PASSWORD" not in conn.execute(
             "SELECT body FROM settings ORDER BY version DESC LIMIT 1"
@@ -397,6 +412,51 @@ def test_fresh_database_seeds_defaults_and_keeps_five_versions(tmp_path):
         assert load_settings(conn)["volume"] == 6
     finally:
         conn.close()
+
+
+def test_existing_settings_gain_only_missing_delivery_keys(tmp_path):
+    data = tmp_path / "data"
+    conn = init_data(data)
+    try:
+        body = load_settings(conn)
+        for key in ("print_enabled", "upload_enabled", "local_retention_days"):
+            body.pop(key)
+        body["nickname"] = "Ada"
+        body["hold_mode"] = False
+        save_settings(conn, body)
+        version = conn.execute("SELECT MAX(version) AS version FROM settings").fetchone()["version"]
+    finally:
+        conn.close()
+    conn = init_data(data)
+    try:
+        loaded = load_settings(conn)
+        assert loaded["nickname"] == "Ada"
+        assert loaded["hold_mode"] is False
+        assert loaded["print_enabled"] is True
+        assert loaded["upload_enabled"] is True
+        assert loaded["local_retention_days"] == 30
+        filled = conn.execute("SELECT MAX(version) AS version FROM settings").fetchone()["version"]
+        assert filled == version + 1
+    finally:
+        conn.close()
+    conn = init_data(data)
+    try:
+        stayed = conn.execute("SELECT MAX(version) AS version FROM settings").fetchone()["version"]
+        assert stayed == filled
+        assert load_settings(conn)["hold_mode"] is False
+    finally:
+        conn.close()
+
+
+def test_existing_secrets_file_is_left_alone(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    secrets = data / "secrets.env"
+    secrets.write_text("CALDAV_PASSWORD=keep\n", encoding="utf-8")
+    conn = init_data(data)
+    conn.close()
+    assert secrets.read_text(encoding="utf-8") == "CALDAV_PASSWORD=keep\n"
+    assert stat.S_IMODE(secrets.stat().st_mode) == 0o600
 
 
 def test_weather_numbers_and_daily_item_shapes():

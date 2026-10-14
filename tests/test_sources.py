@@ -956,9 +956,14 @@ def test_missing_coordinates_omit_sun_moon_and_weather(tmp_path):
 
 def test_collectors_do_not_import_the_smoke_scripts_or_call_a_shell():
     root = Path("newspaper")
-    for path in list(root.glob("*.py")) + list((root / "sources").glob("*.py")):
+    files = list(root.glob("*.py")) + list((root / "sources").glob("*.py"))
+    for path in files:
         text = path.read_text(encoding="utf-8")
         assert "scripts.smoke" not in text
         assert "scripts/smoke" not in text
-        assert "subprocess" not in text
         assert "os.system" not in text
+        assert "shell=True" not in text
+    collectors = list((root / "sources").glob("*.py"))
+    collectors.extend(root / name for name in ("http.py", "edition_build.py", "db.py"))
+    for path in collectors:
+        assert "subprocess" not in path.read_text(encoding="utf-8")

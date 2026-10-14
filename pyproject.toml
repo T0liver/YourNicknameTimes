@@ -21,6 +21,7 @@ dependencies = [
 [project.scripts]
 newspaper-render = "newspaper.render:main"
 newspaper-edition = "newspaper.edition_build:main"
+newspaper-worker = "newspaper.worker:main"
 
 [tool.setuptools.packages.find]
 include = ["newspaper*"]

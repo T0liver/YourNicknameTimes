@@ -116,13 +116,13 @@
         {% if due %}
         <div class="block-label">Esedékes</div>
         {% for item in due %}
-        <p>{{ item }}</p>
+        <p>{% if item is mapping %}{{ item.text }}{% else %}{{ item }}{% endif %}</p>
         {% endfor %}
         {% endif %}
         {% if overdue %}
         <div class="block-label">Lejárt</div>
         {% for item in overdue %}
-        <p>{{ item }}</p>
+        <p>{% if item is mapping %}{{ item.text }}{% else %}{{ item }}{% endif %}</p>
         {% endfor %}
         {% endif %}
       </td>
