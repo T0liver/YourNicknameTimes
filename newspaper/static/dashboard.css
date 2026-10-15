@@ -1,0 +1,16 @@
+:root {
+  --ink: #1c1915;
+  --paper: #f6f1e7;
+  --rule: #c4b8a5;
+  --ok: #2f6b4f;
+  --warn: #8a5a12;
+  --bad: #8d2f2f;
+}
+body {
+  margin: 1rem;
+  background: var(--paper);
+  color: var(--ink);
+  font: 1rem/1.4 sans-serif;
+}
+form { display: inline; }
+a { color: var(--ink); }

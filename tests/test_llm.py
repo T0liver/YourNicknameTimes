@@ -380,7 +380,7 @@ def test_a_spaced_key_is_sent_and_not_appended_twice(tmp_path):
     assert run(data, now=WHEN, render_pdf=_write_ok, get=_feeds(), post=poster) == 0
     assert poster.calls[0][1]["headers"]["Authorization"] == "Bearer sk-live"
     text = (data / "secrets.env").read_text(encoding="utf-8")
-    assert text == "OPENROUTER_API_KEY = sk-live\n"
+    assert text == "OPENROUTER_API_KEY = sk-live\nADMIN_PASSWORD_HASH=\nSESSION_SECRET=\n"
     assert text.count("OPENROUTER_API_KEY") == 1
 
 

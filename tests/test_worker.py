@@ -1043,3 +1043,167 @@ def test_secrets_mode_stays_private(tmp_path):
     data = _init(tmp_path)
     _secrets(data)
     assert stat.S_IMODE((data / "secrets.env").stat().st_mode) == 0o600
+
+
+def _job(data, kind, day=DAY, stamp="2026-10-14T08:00:00+02:00"):
+    conn = connect(data / "newspaper.db")
+    try:
+        conn.execute(
+            """
+            INSERT INTO jobs (run_id, edition_date, kind, status, created_at, updated_at)
+            VALUES (NULL, ?, ?, 'pending', ?, ?)
+            """,
+            (day, kind, stamp, stamp),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def test_run_now_builds_today_and_holds(tmp_path):
+    data = _init(tmp_path, printer_name="Brother")
+    _seed(data, job_status="pending")
+    _job(data, "run_now")
+    calls, build = _builder()
+    cups = FakeCups()
+    cycle(data, now=NINE, ntp_synced=True, build=build, cups=cups, copies=_quiet_copies)
+    assert calls == [NINE]
+    assert cups.submits == []
+    assert _run(data)["status"] == "awaiting_approval"
+    assert _rows(data, "SELECT status FROM jobs WHERE kind = 'run_now'")[0]["status"] == "done"
+
+
+def test_stale_preview_does_not_build_tomorrow(tmp_path):
+    data = _init(tmp_path, printer_name="Brother")
+    _job(data, "preview", day=DAY)
+    calls, build = _builder()
+    tomorrow = datetime(2026, 10, 15, 6, 0, tzinfo=ZONE)
+    cycle(data, now=tomorrow, ntp_synced=True, build=build, cups=FakeCups(), copies=_quiet_copies)
+    assert calls == []
+    assert _rows(data, "SELECT status FROM jobs WHERE kind = 'preview'")[0]["status"] == "pending"
+    assert _rows(data, "SELECT id FROM runs") == []
+
+
+def test_preview_without_ntp_stays_pending(tmp_path):
+    data = _init(tmp_path)
+    _job(data, "preview")
+    calls, build = _builder()
+    cycle(data, now=NINE, ntp_synced=False, build=build, cups=FakeCups(), copies=_quiet_copies)
+    assert calls == []
+    assert _rows(data, "SELECT status FROM jobs WHERE kind = 'preview'")[0]["status"] == "pending"
+
+
+def test_preview_keeps_a_held_run_and_refreshes_cloud(tmp_path):
+    data = _init(tmp_path, printer_name="Brother")
+    directory = _seed(data, job_status="pending")
+    (directory / "cloud.pdf").write_bytes(b"old")
+    _job(data, "preview")
+    calls, build = _builder()
+    cycle(data, now=NINE, ntp_synced=True, build=build, cups=FakeCups(), copies=_quiet_copies)
+    assert calls == [NINE]
+    assert len(_rows(data, "SELECT id FROM runs")) == 1
+    assert _run(data)["status"] == "awaiting_approval"
+    assert _rows(data, "SELECT status FROM jobs WHERE kind = 'hold'")[0]["status"] == "pending"
+    assert (directory / "cloud.pdf").read_bytes() == b"%PDF-cloud"
+
+
+def test_preview_without_a_run_records_one_and_does_not_print(tmp_path):
+    data = _init(tmp_path, printer_name="Brother")
+    _job(data, "preview")
+    calls, build = _builder()
+    cups = FakeCups()
+    cycle(data, now=NINE, ntp_synced=True, build=build, cups=cups, copies=_quiet_copies)
+    assert calls == [NINE]
+    assert cups.submits == []
+    assert _rows(data, "SELECT kind FROM jobs WHERE kind = 'hold'") == []
+    assert _run(data)["status"] == "done"
+    assert (data / "editions" / DAY / "preview.png").is_file()
+
+
+def test_failed_preview_prints_nothing(tmp_path):
+    data = _init(tmp_path, printer_name="Brother")
+    _job(data, "preview")
+    calls, build = _builder(code=1)
+    cups = FakeCups()
+    cycle(data, now=NINE, ntp_synced=True, build=build, cups=cups, copies=_quiet_copies)
+    assert calls
+    assert all(item == NINE for item in calls)
+    assert cups.submits == []
+    assert _run(data)["status"] == "failed"
+    assert _rows(data, "SELECT status FROM jobs WHERE kind = 'preview'")[0]["status"] == "failed"
+
+
+def test_reprint_polls_marker_and_leaves_the_run(tmp_path):
+    data = _init(tmp_path, printer_name="Brother")
+    directory = _seed(data, status="done", job_status=None)
+    _job(data, "reprint")
+    before = dict(_run(data))
+    cups = FakeCups(("processing", "completed"))
+    cycle(data, now=NINE, ntp_synced=True, cups=cups, copies=_quiet_copies)
+    assert len(cups.submits) == 1
+    assert (directory / "reprint.cups").is_file()
+    assert _run(data)["status"] == "done"
+    assert _run(data)["cups_job_id"] is None
+    cycle(data, now=NINE, ntp_synced=True, cups=cups, copies=_quiet_copies)
+    assert len(cups.submits) == 1
+    assert not (directory / "reprint.cups").exists()
+    assert _rows(data, "SELECT status FROM jobs WHERE kind = 'reprint'")[0]["status"] == "done"
+    assert dict(_run(data))["status"] == before["status"]
+
+
+def test_missing_print_pdf_fails_reprint_and_removes_marker(tmp_path):
+    data = _init(tmp_path, printer_name="Brother")
+    directory = _seed(data, status="done", job_status=None)
+    (directory / "reprint.cups").write_text("Brother-old\n", encoding="utf-8")
+    (directory / "print.pdf").unlink()
+    _job(data, "reprint")
+    cups = FakeCups()
+    cycle(data, now=NINE, ntp_synced=True, cups=cups, copies=_quiet_copies)
+    assert cups.submits == []
+    assert not (directory / "reprint.cups").exists()
+    assert _rows(data, "SELECT status FROM jobs WHERE kind = 'reprint'")[0]["status"] == "failed"
+
+
+def test_empty_printer_name_does_not_reprint(tmp_path):
+    data = _init(tmp_path, printer_name="")
+    _seed(data, status="done", job_status=None)
+    _job(data, "reprint")
+    cups = FakeCups()
+    cycle(data, now=NINE, ntp_synced=True, cups=cups, copies=_quiet_copies)
+    assert cups.submits == []
+    assert _rows(data, "SELECT status FROM jobs WHERE kind = 'reprint'")[0]["status"] == "failed"
+    assert _kinds(data) == []
+
+
+def test_reupload_sends_cloud_pdf_and_missing_file_fails(tmp_path):
+    data = _init(tmp_path, printer_name="Brother")
+    directory = _seed(data, status="done", job_status=None)
+    _secrets(data)
+    _job(data, "reupload")
+    posts = []
+    cycle(
+        data,
+        now=NINE,
+        ntp_synced=True,
+        cups=FakeCups(),
+        dropbox=DropboxUploader(post=_post_recorder(posts)),
+        copies=_quiet_copies,
+    )
+    uploads = [item for item in posts if item[0].endswith("/files/upload")]
+    assert len(uploads) == 2
+    assert _run(data)["status"] == "done"
+    assert _run(data)["uploaded"] == 0
+    (directory / "cloud.pdf").unlink()
+    _job(data, "reupload")
+    posts.clear()
+    cycle(
+        data,
+        now=NINE,
+        ntp_synced=True,
+        cups=FakeCups(),
+        dropbox=DropboxUploader(post=_post_recorder(posts)),
+        copies=_quiet_copies,
+    )
+    assert posts == []
+    failed = _rows(data, "SELECT status FROM jobs WHERE kind = 'reupload' ORDER BY id")
+    assert failed[-1]["status"] == "failed"

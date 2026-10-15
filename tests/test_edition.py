@@ -536,7 +536,10 @@ def test_existing_openrouter_line_is_not_rewritten(tmp_path):
     secrets.write_text("CALDAV_PASSWORD=keep\nOPENROUTER_API_KEY=sk-keep\n", encoding="utf-8")
     conn = init_data(data)
     conn.close()
-    assert secrets.read_text(encoding="utf-8") == "CALDAV_PASSWORD=keep\nOPENROUTER_API_KEY=sk-keep\n"
+    assert secrets.read_text(encoding="utf-8") == (
+        "CALDAV_PASSWORD=keep\nOPENROUTER_API_KEY=sk-keep\n"
+        "ADMIN_PASSWORD_HASH=\nSESSION_SECRET=\n"
+    )
 
 
 def test_existing_settings_gain_the_model_keys(tmp_path):
@@ -566,7 +569,10 @@ def test_existing_secrets_file_is_left_alone(tmp_path):
     secrets.write_text("CALDAV_PASSWORD=keep\n", encoding="utf-8")
     conn = init_data(data)
     conn.close()
-    assert secrets.read_text(encoding="utf-8") == "CALDAV_PASSWORD=keep\nOPENROUTER_API_KEY=\n"
+    assert secrets.read_text(encoding="utf-8") == (
+        "CALDAV_PASSWORD=keep\nOPENROUTER_API_KEY=\n"
+        "ADMIN_PASSWORD_HASH=\nSESSION_SECRET=\n"
+    )
     assert stat.S_IMODE(secrets.stat().st_mode) == 0o600
 
 

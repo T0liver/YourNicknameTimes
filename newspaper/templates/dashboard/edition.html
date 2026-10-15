@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block body %}
+<h1>{{ edition_date }}</h1>
+<p>Run {{ run_status }}</p>
+<p><a href="/editions/{{ edition_date }}/print.pdf">print.pdf</a>
+   <a href="/editions/{{ edition_date }}/cloud.pdf">cloud.pdf</a>
+   <a href="/editions/{{ edition_date }}/edition.json">edition.json</a></p>
+<ul>
+  {% for name in llm %}
+  <li><a href="/editions/{{ edition_date }}/llm/{{ name }}">{{ name }}</a></li>
+  {% endfor %}
+</ul>
+<pre>{{ snapshot }}</pre>
+<form method="post" action="/actions/reprint">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="edition_date" value="{{ edition_date }}">
+  <input type="hidden" name="next" value="/editions/{{ edition_date }}">
+  <button type="submit">Reprint</button>
+</form>
+<form method="post" action="/actions/reupload">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="edition_date" value="{{ edition_date }}">
+  <input type="hidden" name="next" value="/editions/{{ edition_date }}">
+  <button type="submit">Re-upload</button>
+</form>
+{% endblock %}

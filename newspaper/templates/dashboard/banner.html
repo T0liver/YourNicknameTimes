@@ -1,0 +1,18 @@
+<div id="banner"
+     hx-get="/banner"
+     hx-trigger="every 2s"
+     hx-swap="outerHTML">
+  <p>Latest run <span id="run-status">{{ run_status }}</span></p>
+  {% if hold_pending %}
+  <form method="post" action="/actions/approve">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="edition_date" value="{{ edition_date }}">
+    <button type="submit">Approve</button>
+  </form>
+  <form method="post" action="/actions/reject">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="edition_date" value="{{ edition_date }}">
+    <button type="submit">Reject</button>
+  </form>
+  {% endif %}
+</div>

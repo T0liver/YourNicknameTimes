@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block body %}
+{% set run_status = banner.run_status %}
+{% set edition_date = banner.edition_date %}
+{% set hold_pending = banner.hold_pending %}
+{% set csrf = banner.csrf %}
+{% include "banner.html" %}
+<p id="wifi">{{ wifi }}</p>
+<p>Baïkal</p>
+<p>{{ status_url }}</p>
+{% if last_status %}<p>{{ last_status }}</p>{% endif %}
+<form method="post" action="/actions/run-now">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="edition_date" value="{{ today }}">
+  <button type="submit">Run now</button>
+</form>
+<form method="post" action="/actions/preview">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="edition_date" value="{{ today }}">
+  <button type="submit">Preview</button>
+</form>
+<form method="post" action="/actions/regenerate">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="edition_date" value="{{ today }}">
+  <button type="submit">Regenerate</button>
+</form>
+<ul>
+  {% for day in editions %}
+  <li>
+    <a href="/editions/{{ day }}">{{ day }}</a>
+    <a href="/editions/{{ day }}/print.pdf">print.pdf</a>
+    <a href="/editions/{{ day }}/cloud.pdf">cloud.pdf</a>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

@@ -15,7 +15,10 @@ SECRETS_TEXT = (
     "DROPBOX_APP_KEY=\n"
     "DROPBOX_APP_SECRET=\n"
     "OPENROUTER_API_KEY=\n"
+    "ADMIN_PASSWORD_HASH=\n"
+    "SESSION_SECRET=\n"
 )
+_APPENDED_SECRETS = ("OPENROUTER_API_KEY", "ADMIN_PASSWORD_HASH", "SESSION_SECRET")
 
 DEFAULT_SETTINGS = {
     "caldav_host": "",
@@ -174,8 +177,9 @@ CREATE TABLE IF NOT EXISTS alerts (
 
 
 def connect(db_path: Path) -> sqlite3.Connection:
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(db_path, timeout=5.0)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
     return conn
 
 
@@ -270,11 +274,14 @@ def record_edition(conn: sqlite3.Connection, edition_date: str, volume: int, dir
 def ensure_secrets(path: Path) -> None:
     if not path.exists():
         path.write_text(SECRETS_TEXT, encoding="utf-8")
-    elif not _secret_defined(path, "OPENROUTER_API_KEY"):
-        existing = path.read_bytes()
-        prefix = b"" if not existing or existing.endswith(b"\n") else b"\n"
-        with path.open("ab") as handle:
-            handle.write(prefix + b"OPENROUTER_API_KEY=\n")
+    else:
+        missing = [name for name in _APPENDED_SECRETS if not _secret_defined(path, name)]
+        if missing:
+            existing = path.read_bytes()
+            prefix = b"" if not existing or existing.endswith(b"\n") else b"\n"
+            blob = prefix + "".join(f"{name}=\n" for name in missing).encode()
+            with path.open("ab") as handle:
+                handle.write(blob)
     path.chmod(0o600)
 
 
@@ -334,6 +341,30 @@ def remember_rates(conn: sqlite3.Connection, rates: list[tuple[str, str, str]]) 
 
 def read_password(path: Path) -> str:
     return read_secrets(path).get("CALDAV_PASSWORD", "")
+
+
+def set_secret(path: Path, name: str, value: str) -> None:
+    """Replace one secret line. Other lines stay as they are."""
+    lines = path.read_text(encoding="utf-8").splitlines() if path.is_file() else []
+    replaced = False
+    written = []
+    for line in lines:
+        if _line_key(line) == name:
+            written.append(f"{name}={value}")
+            replaced = True
+        else:
+            written.append(line)
+    if not replaced:
+        written.append(f"{name}={value}")
+    path.write_text("\n".join(written) + "\n", encoding="utf-8")
+    path.chmod(0o600)
+
+
+def _line_key(line: str) -> str | None:
+    if not line or line.startswith("#") or "=" not in line:
+        return None
+    key, _value = line.split("=", 1)
+    return key.strip()
 
 
 def read_secrets(path: Path) -> dict[str, str]:

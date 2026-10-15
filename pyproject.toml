@@ -16,12 +16,17 @@ dependencies = [
     "caldav",
     "Pillow",
     "astral",
+    "fastapi",
+    "httpx",
+    "python-multipart",
+    "uvicorn",
 ]
 
 [project.scripts]
 newspaper-render = "newspaper.render:main"
 newspaper-edition = "newspaper.edition_build:main"
 newspaper-worker = "newspaper.worker:main"
+newspaper-web = "newspaper.web:main"
 
 [tool.setuptools.packages.find]
 include = ["newspaper*"]

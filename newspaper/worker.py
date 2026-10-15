@@ -82,6 +82,11 @@ class SystemCups:
             raise PrintError(text.strip() or "lp returned no job id")
         return text.split(marker, 1)[1].split()[0]
 
+    def job_visible(self, job_id: str) -> bool:
+        completed = self._stdout(["lpstat", "-W", "completed", "-o", job_id])
+        active = self._stdout(["lpstat", "-W", "not-completed", "-o", job_id])
+        return job_id in completed or job_id in active
+
     def job_state(self, job_id: str) -> str:
         detailed = self._stdout(["lpstat", "-W", "all", "-l", "-o", job_id])
         lowered = detailed.casefold()
@@ -204,11 +209,21 @@ def cycle(
             )
         _reject_pending(box[0], stamp)
         built = _run_regenerate(box, data_dir, settings, moment, builder, copy_fn, stamp)
+        if not built and synced:
+            built = _run_dated_job(
+                box, data_dir, settings, moment, builder, copy_fn, stamp, "run_now", deliver=True
+            )
+        if synced:
+            _run_dated_job(
+                box, data_dir, settings, moment, builder, copy_fn, stamp, "preview", deliver=False
+            )
         if not built and _should_build(box[0], settings, moment, synced):
             code, elapsed = _invoke_build(box, data_dir, builder, moment)
             _after_build(box[0], data_dir, settings, moment, code, elapsed, copy_fn, stamp)
         _auto_approve(box[0], settings, moment, stamp)
         _deliver_ready(box[0], data_dir, settings, printer, uploader, copy_fn, stamp)
+        _reprint(box[0], data_dir, settings, printer, stamp)
+        _reupload(box[0], data_dir, uploader, stamp)
         _approval_alerts(box[0], moment, stamp)
     finally:
         box[0].close()
@@ -256,6 +271,153 @@ def _run_regenerate(box, data_dir, settings, moment, builder, copy_fn, stamp: st
         )
         box[0].commit()
     return bool(jobs)
+
+
+def _run_dated_job(box, data_dir, settings, moment, builder, copy_fn, stamp, kind, *, deliver: bool) -> bool:
+    day = moment.date().isoformat()
+    jobs = box[0].execute(
+        """
+        SELECT * FROM jobs
+        WHERE kind = ? AND status = 'pending' AND edition_date = ?
+        ORDER BY id
+        """,
+        (kind, day),
+    ).fetchall()
+    for job in jobs:
+        code, elapsed = _invoke_build(box, data_dir, builder, moment)
+        directory = data_dir / "editions" / day
+        ok = code == 0
+        if deliver:
+            _after_build(box[0], data_dir, settings, moment, code, elapsed, copy_fn, stamp)
+        else:
+            if ok:
+                try:
+                    copy_fn(directory, settings.get("cloud_level") or "trimmed")
+                except Exception as exc:
+                    ok = False
+                    _alert(box[0], "run_failed", "error", f"A delivery file is missing: {exc}", day, stamp)
+            sources, model, trims = _snapshot_meta(directory)
+            if _non_failed_run(box[0], day) is None:
+                status = "failed"
+                if ok:
+                    status = "done_degraded" if _source_failed(sources) else "done"
+                _insert_finished_run(
+                    box[0], day, stamp, status, directory, {"build": elapsed}, sources, model, trims
+                )
+        _set_job(box[0], job["id"], "done" if ok else "failed", stamp)
+    return bool(jobs)
+
+
+def _non_failed_run(conn, day: str):
+    return conn.execute(
+        "SELECT 1 FROM runs WHERE edition_date = ? AND status != 'failed'",
+        (day,),
+    ).fetchone()
+
+
+def _insert_finished_run(conn, day, stamp, status, directory, timing, sources, model, trims) -> None:
+    conn.execute(
+        """
+        INSERT INTO runs (
+            edition_date, started_at, finished_at, status, printed, uploaded,
+            cups_job_id, upload_attempts, delivery, timing, sources, model, trims, directory
+        ) VALUES (?, ?, ?, ?, 0, 0, NULL, 0, NULL, ?, ?, ?, ?, ?)
+        """,
+        (
+            day,
+            stamp,
+            stamp,
+            status,
+            json.dumps(timing),
+            json.dumps(sources),
+            model,
+            json.dumps(trims),
+            str(directory),
+        ),
+    )
+    conn.commit()
+
+
+def _reprint(conn, data_dir, settings, cups, stamp: str) -> None:
+    for job in _pending_jobs(conn, "reprint"):
+        day = job["edition_date"]
+        run = _latest_run(conn, day)
+        directory = Path(run["directory"]) if run is not None and run["directory"] else data_dir / "editions" / day
+        pdf = directory / "print.pdf"
+        marker = directory / "reprint.cups"
+        if not str(settings.get("printer_name") or "").strip() or not pdf.is_file():
+            _fail_reprint(conn, job["id"], marker, day, stamp, alert=pdf.is_file() is False and bool(str(settings.get("printer_name") or "").strip()))
+            continue
+        job_id = marker.read_text(encoding="utf-8").strip() if marker.is_file() else ""
+        if not job_id:
+            try:
+                job_id = cups.submit(
+                    lp_argv(str(settings.get("printer_name") or ""), pdf, bool(settings.get("duplex", True)))
+                )
+            except Exception as exc:
+                _alert(conn, "printer", "error", f"CUPS rejected the job: {exc}", day, stamp)
+                _fail_reprint(conn, job["id"], marker, day, stamp, alert=False)
+                continue
+            directory.mkdir(parents=True, exist_ok=True)
+            marker.write_text(job_id + "\n", encoding="utf-8")
+            conn.commit()
+        visible = cups.job_visible(job_id) if hasattr(cups, "job_visible") else True
+        if not visible:
+            _alert(conn, "printer", "error", "CUPS lost the reprint.", day, stamp)
+            _fail_reprint(conn, job["id"], marker, day, stamp, alert=False)
+            continue
+        state = cups.job_state(job_id)
+        if state == "completed":
+            _finish_reprint(conn, job["id"], marker, stamp, "done")
+        elif state in {"canceled", "aborted"}:
+            _alert(conn, "printer", "error", f"CUPS {state} the job.", day, stamp)
+            _finish_reprint(conn, job["id"], marker, stamp, "failed")
+
+
+def _fail_reprint(conn, job_id: int, marker: Path, day: str, stamp: str, *, alert: bool) -> None:
+    if alert:
+        _alert(conn, "printer", "error", "A delivery file is missing.", day, stamp)
+    _finish_reprint(conn, job_id, marker, stamp, "failed")
+
+
+def _finish_reprint(conn, job_id: int, marker: Path, stamp: str, status: str) -> None:
+    if marker.is_file():
+        marker.unlink()
+    _set_job(conn, job_id, status, stamp)
+
+
+def _reupload(conn, data_dir, dropbox, stamp: str) -> None:
+    for job in _pending_jobs(conn, "reupload"):
+        day = job["edition_date"]
+        run = _latest_run(conn, day)
+        directory = Path(run["directory"]) if run is not None and run["directory"] else data_dir / "editions" / day
+        pdf = directory / "cloud.pdf"
+        if not pdf.is_file():
+            _alert(conn, "dropbox", "error", "Dropbox upload failed.", day, stamp)
+            _set_job(conn, job["id"], "failed", stamp)
+            continue
+        try:
+            dropbox.upload(read_secrets(data_dir / "secrets.env"), pdf, day)
+        except Exception:
+            _alert(conn, "dropbox", "error", "Dropbox upload failed.", day, stamp)
+            _set_job(conn, job["id"], "failed", stamp)
+            continue
+        _set_job(conn, job["id"], "done", stamp)
+
+
+def _pending_jobs(conn, kind: str):
+    return conn.execute(
+        "SELECT * FROM jobs WHERE kind = ? AND status = 'pending' ORDER BY id",
+        (kind,),
+    ).fetchall()
+
+
+def _set_job(conn, job_id: int, status: str, stamp: str) -> None:
+    conn.execute(
+        "UPDATE jobs SET status = ?, updated_at = ? WHERE id = ?",
+        (status, stamp, job_id),
+    )
+    conn.commit()
 
 
 def _after_build(conn, data_dir, settings, moment, code, elapsed, copy_fn, stamp: str) -> None:

@@ -27,7 +27,7 @@ The first run creates the database and a secrets file, then writes today's paper
 .venv/bin/newspaper-edition --data-dir data
 ```
 
-`data/newspaper.db` starts at volume 1 with an empty calendar host, Telex as the local feed, and Wired as the interest feed. Until a host is saved, the schedule blocks stay empty. `data/secrets.env` is created with mode 0600. A fresh file has `CALDAV_PASSWORD=`, `DROPBOX_REFRESH_TOKEN=`, `DROPBOX_APP_KEY=`, `DROPBOX_APP_SECRET=`, and `OPENROUTER_API_KEY=`. The same blank lines are in `data/secrets.env.example`. An existing secrets file keeps its lines and gains `OPENROUTER_API_KEY=` when that line is missing. The edition is `data/editions/YYYY-MM-DD/edition.json` plus `print.pdf`. Any drops are listed in `run.log` in that folder. Volume goes up by one after the PDF is a single page.
+`data/newspaper.db` starts at volume 1 with an empty calendar host, Telex as the local feed, and Wired as the interest feed. Until a host is saved, the schedule blocks stay empty. `data/secrets.env` is created with mode 0600. A fresh file has `CALDAV_PASSWORD=`, `DROPBOX_REFRESH_TOKEN=`, `DROPBOX_APP_KEY=`, `DROPBOX_APP_SECRET=`, `OPENROUTER_API_KEY=`, `ADMIN_PASSWORD_HASH=`, and `SESSION_SECRET=`. The same blank lines are in `data/secrets.env.example`. An existing secrets file keeps its lines and gains any of those that are missing. The edition is `data/editions/YYYY-MM-DD/edition.json` plus `print.pdf`. Any drops are listed in `run.log` in that folder. Volume goes up by one after the PDF is a single page.
 
 `newspaper-render` renders the packaged fixture.
 
@@ -42,4 +42,16 @@ Hold mode starts on. The build writes `print.pdf`, `cloud.pdf`, and `preview.png
 ```
 
 Printing is `lp` to the saved printer name: A4, grayscale, 100% scale, and duplex when that setting is on. An empty printer name skips `lp`. Upload reads the three Dropbox lines from `data/secrets.env` and sends `cloud.pdf` to `/editions/YYYY-MM-DD.pdf` and `/latest.pdf`. Local edition folders older than 30 days are deleted. The Dropbox copies stay.
+
+A pending `run_now` or `preview` job runs only when NTP is synced and the job date is today. Run now then holds or delivers from the settings. Preview refreshes `cloud.pdf` and `preview.png` and adds a finished run only when that date does not already have one. Reprint writes the CUPS id to `reprint.cups` and leaves the run status unchanged. An empty printer name does not call `lp`. Re-upload sends the existing `cloud.pdf`.
+
+## Serve the dashboard
+
+`newspaper-web` listens on `127.0.0.1:8080`. The first start prints `admin password:` once and stores the hash in `data/secrets.env`. An empty `SESSION_SECRET=` is filled and is not printed.
+
+```bash
+.venv/bin/newspaper-web --data-dir data
+```
+
+Sign in with that password. Approve and Reject sit on the banner while a hold is pending. Run now and Preview are on the home page. Reprint and re-upload are on the edition page. Those actions insert a job. The worker prints and uploads. `GET /status` and `HEAD /status` stay open.
 
