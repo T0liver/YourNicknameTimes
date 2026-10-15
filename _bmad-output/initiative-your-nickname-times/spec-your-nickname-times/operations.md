@@ -60,3 +60,20 @@ The printer is a Brother, on USB, driven by CUPS. The exact model number is writ
 Milestone 0 confirms this unit: CUPS detects it, and `lp` prints a test page. Checking the model on the OpenPrinting driver database is worth doing once the model number is known.
 
 A laser printer is more dependable for a once-a-day job because its output does not dry out. An inkjet's nozzles can clog when it sits unused. The printer also needs to accept A4 and grayscale, and it should not enter a deep sleep that ignores USB wake-ups. That sleep behavior varies by model.
+
+## Burn-in week
+
+Milestone 8 is seven consecutive real mornings in hold mode. Each morning should end with one A4 `print.pdf` on paper. An external checker on the LAN or VPN polls `/status` the whole week. The operator keeps a log of prints, checker results, and any drops noted in each edition's `run.log`.
+
+Before day one, confirm hold mode is on in **Schedule**, the worker and web service are running, and the checker hits `https://newspaper.local/status` or the plain-HTTP status port if you use it. See status-api.md for codes, `degraded` vs `down`, and optional bearer token.
+
+Each morning: wait for the banner to show `awaiting_approval` and the Approve button, download `print.pdf` from the home edition list (or the edition page), approve if the page fits one sheet, and confirm the printer finished. Reject or regenerate when the layout is wrong. Drops are listed in `data/editions/YYYY-MM-DD/run.log`; repeated drops mean the page is too full. Leave **Auto-approve** off in **Schedule** so each morning needs a deliberate Approve click.
+
+During the week, change only levers that already exist in the dashboard:
+
+- **Density** (how much fits): which calendars and task lists are included; feed count, weights, and quotas; toggles for weather, almanac lines, and exchange rates; weekend mood; model on or off; **Regenerate** after a settings change.
+- **Copy** (wording on the page): nickname, motto, weekend greeting, paper language.
+
+Do not add features or new settings during burn-in. Note each change in the log with the date.
+
+After day seven, review the log and checker history. If mornings were steady and `/status` looked right, turn hold mode off in **Schedule** when you are ready for automatic print and upload. If not, leave hold on and fix sources or density before trying again.

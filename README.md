@@ -67,3 +67,7 @@ sudo ./deploy/install.sh
 
 Avahi publishes `newspaper.local`. The install enables Avahi and unattended security upgrades. SSH stays keys-only. The firewall allows TCP 443 and TCP 22 from the LAN, UDP 5353 to the mDNS group, and the status port only while `data/status-http.port` has a number.
 
+## Burn-in week
+
+After install, run seven real mornings in hold mode with your checker polling `/status`. Copy [docs/burn-in-log.example.md](docs/burn-in-log.example.md) beside `data/`, follow [docs/burn-in-week.md](docs/burn-in-week.md), and turn hold mode off when the week looks good.
+
