@@ -1,12 +1,25 @@
 {% extends "base.html" %}
 {% block body %}
+<nav class="nav">
+  <a href="/">{{ labels.home }}</a>
+  <a href="/settings/general">{{ labels.settings }}</a>
+</nav>
 {% set run_status = banner.run_status %}
 {% set edition_date = banner.edition_date %}
 {% set hold_pending = banner.hold_pending %}
 {% set csrf = banner.csrf %}
 {% include "banner.html" %}
+{% if show_checklist %}
+<section id="checklist">
+  <h2>{{ labels.checklist }}</h2>
+  <ul>
+  {% for key, done in checklist %}
+    <li{% if done %} class="ok"{% endif %}>{{ labels[key] }}</li>
+  {% endfor %}
+  </ul>
+</section>
+{% endif %}
 <p id="wifi">{{ wifi }}</p>
-<p>Baïkal</p>
 <p>{{ status_url }}</p>
 {% if last_status %}<p>{{ last_status }}</p>{% endif %}
 <form method="post" action="/actions/run-now">

@@ -1,0 +1,44 @@
+{% extends "_settings_layout.html" %}
+{% block settings %}
+<form method="post" action="/settings/general">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label>{{ labels.nickname }}<input name="nickname" value="{{ form.nickname if form else settings.nickname }}"></label>
+  <label>{{ labels.motto }}<input name="motto" value="{{ form.motto if form else settings.motto }}"></label>
+  <label>{{ labels.city }}<input name="city" value="{{ form.city if form else settings.city }}"></label>
+  <label>{{ labels.latitude }}<input name="latitude" value="{{ form.latitude if form else settings.latitude }}"></label>
+  <label>{{ labels.longitude }}<input name="longitude" value="{{ form.longitude if form else settings.longitude }}"></label>
+  <label>{{ labels.timezone }}<input name="timezone" value="{{ form.timezone if form else settings.timezone }}"></label>
+  <label>{{ labels.paper_language }}
+    <select name="language">
+      <option value="hu"{% if (form.language if form else settings.language) == 'hu' %} selected{% endif %}>hu</option>
+      <option value="en"{% if (form.language if form else settings.language) == 'en' %} selected{% endif %}>en</option>
+    </select>
+  </label>
+  <label>{{ labels.dashboard_language }}
+    <select name="dashboard_language">
+      <option value="hu"{% if (form.dashboard_language if form else settings.dashboard_language) == 'hu' %} selected{% endif %}>hu</option>
+      <option value="en"{% if (form.dashboard_language if form else settings.dashboard_language) == 'en' %} selected{% endif %}>en</option>
+    </select>
+  </label>
+  <label>{{ labels.paper_size }}
+    <select name="paper_size">
+      <option value="A4" selected>A4</option>
+    </select>
+  </label>
+  <button type="submit">{{ labels.save }}</button>
+</form>
+<form method="post" action="/settings/general/test">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="nickname" value="{{ settings.nickname }}">
+  <input type="hidden" name="motto" value="{{ settings.motto }}">
+  <input type="hidden" name="city" value="{{ settings.city }}">
+  <input type="hidden" name="latitude" value="{{ settings.latitude }}">
+  <input type="hidden" name="longitude" value="{{ settings.longitude }}">
+  <input type="hidden" name="timezone" value="{{ settings.timezone }}">
+  <input type="hidden" name="language" value="{{ settings.language }}">
+  <input type="hidden" name="dashboard_language" value="{{ settings.dashboard_language }}">
+  <input type="hidden" name="paper_size" value="{{ settings.paper_size }}">
+  <button type="submit">{{ labels.test }}</button>
+</form>
+<form method="post" action="/settings/general/rollback"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit">{{ labels.undo }}</button></form>
+{% endblock %}

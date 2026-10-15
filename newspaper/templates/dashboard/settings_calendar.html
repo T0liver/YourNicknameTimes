@@ -1,0 +1,24 @@
+{% extends "_settings_layout.html" %}
+{% block settings %}
+<form method="post" action="/settings/calendar">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label>{{ labels.caldav_host }}<input name="caldav_host" value="{{ settings.caldav_host }}"></label>
+  <label>{{ labels.caldav_username }}<input name="caldav_username" value="{{ settings.caldav_username }}"></label>
+  <label>{{ labels.caldav_password }}<input type="password" name="caldav_password" placeholder="{{ labels.secret_saved if secret_saved.CALDAV_PASSWORD else '' }}"></label>
+  {% if calendars %}
+  <fieldset><legend>Calendars</legend>
+  {% for cal in calendars %}
+  {% if 'VEVENT' in cal.supported %}
+  <label><input type="checkbox" name="event_cal:{{ cal.url }}" value="on"{% if cal.url in settings.caldav_event_calendars %} checked{% endif %}> {{ cal.name }}</label>
+  {% endif %}
+  {% if 'VTODO' in cal.supported %}
+  <label><input type="checkbox" name="task_cal:{{ cal.url }}" value="on"{% if cal.url in settings.caldav_task_calendars %} checked{% endif %}> {{ cal.name }} (tasks)</label>
+  {% endif %}
+  {% endfor %}
+  </fieldset>
+  {% endif %}
+  <button type="submit">{{ labels.save }}</button>
+</form>
+<form method="post" action="/settings/calendar/test"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="caldav_host" value="{{ settings.caldav_host }}"><input type="hidden" name="caldav_username" value="{{ settings.caldav_username }}"><button type="submit">{{ labels.test }}</button></form>
+<form method="post" action="/settings/calendar/rollback"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit">{{ labels.undo }}</button></form>
+{% endblock %}

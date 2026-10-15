@@ -17,8 +17,9 @@ SECRETS_TEXT = (
     "OPENROUTER_API_KEY=\n"
     "ADMIN_PASSWORD_HASH=\n"
     "SESSION_SECRET=\n"
+    "STATUS_BEARER_TOKEN=\n"
 )
-_APPENDED_SECRETS = ("OPENROUTER_API_KEY", "ADMIN_PASSWORD_HASH", "SESSION_SECRET")
+_APPENDED_SECRETS = ("OPENROUTER_API_KEY", "ADMIN_PASSWORD_HASH", "SESSION_SECRET", "STATUS_BEARER_TOKEN")
 
 DEFAULT_SETTINGS = {
     "caldav_host": "",
@@ -64,6 +65,21 @@ DEFAULT_SETTINGS = {
     "dropbox_retention_days": None,
     "duplex": True,
     "printer_name": "",
+    "latitude": "",
+    "longitude": "",
+    "keep_undated_news": False,
+    "dashboard_language": "en",
+    "paper_size": "A4",
+    "units": "celsius",
+    "xkcd_on": True,
+    "sun_on": True,
+    "moon_on": True,
+    "on_this_day_on": True,
+    "rates_on": True,
+    "caldav_event_calendars": [],
+    "caldav_task_calendars": [],
+    "status_token_enabled": False,
+    "status_http_port": None,
 }
 
 SEED_FEEDS = (
@@ -305,6 +321,55 @@ def load_feeds(conn: sqlite3.Connection) -> list[dict]:
         """
     ).fetchall()
     return [dict(row) for row in rows]
+
+
+def list_feeds(conn: sqlite3.Connection) -> list[dict]:
+    rows = conn.execute(
+        """
+        SELECT id, name, url, category, language, weight, max_items, enabled
+        FROM feeds
+        ORDER BY id
+        """
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def save_feed(conn: sqlite3.Connection, feed_id: int | None, body: dict) -> int:
+    if feed_id is None:
+        cursor = conn.execute(
+            """
+            INSERT INTO feeds (name, url, category, language, weight, max_items, enabled)
+            VALUES (:name, :url, :category, :language, :weight, :max_items, :enabled)
+            """,
+            body,
+        )
+        conn.commit()
+        return int(cursor.lastrowid)
+    conn.execute(
+        """
+        UPDATE feeds
+        SET name = :name, url = :url, category = :category, language = :language,
+            weight = :weight, max_items = :max_items, enabled = :enabled
+        WHERE id = :id
+        """,
+        {**body, "id": feed_id},
+    )
+    conn.commit()
+    return feed_id
+
+
+def delete_feed(conn: sqlite3.Connection, feed_id: int) -> None:
+    conn.execute("DELETE FROM feeds WHERE id = ?", (feed_id,))
+    conn.commit()
+
+
+def rollback_settings(conn: sqlite3.Connection) -> bool:
+    rows = conn.execute("SELECT version, body FROM settings ORDER BY version DESC LIMIT 2").fetchall()
+    if len(rows) < 2:
+        return False
+    previous = json.loads(rows[1]["body"])
+    save_settings(conn, previous)
+    return True
 
 
 def puzzle_keys(conn: sqlite3.Connection, kind: str) -> set[str]:

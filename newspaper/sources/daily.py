@@ -35,6 +35,8 @@ def collect_daily(
     rng = rng or random.Random()
     rotation = settings.get("daily_rotation") or {}
     kind = str(rotation.get(WEEKDAYS[now.weekday()]) or "sudoku")
+    if not settings.get("xkcd_on", True):
+        kind = "sudoku"
     puzzle = _sudoku(rng, weekend)
     if kind != "xkcd":
         return puzzle, {"daily": "ok"}

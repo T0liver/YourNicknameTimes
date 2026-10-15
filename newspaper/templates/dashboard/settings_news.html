@@ -1,0 +1,36 @@
+{% extends "_settings_layout.html" %}
+{% block settings %}
+<form method="post" action="/settings/news">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label>{{ labels.keep_undated_news }}<input type="checkbox" name="keep_undated_news" value="on"{% if settings.keep_undated_news %} checked{% endif %}></label>
+  <button type="submit">{{ labels.save }}</button>
+</form>
+<p><a href="/settings/news/opml">{{ labels.export_opml }}</a></p>
+<form method="post" action="/settings/news/opml" enctype="application/x-www-form-urlencoded">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label>{{ labels.import_opml }}<textarea name="opml"></textarea></label>
+  <button type="submit">{{ labels.import_opml }}</button>
+</form>
+<form method="post" action="/settings/news">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="feed_action" value="save">
+  <input type="hidden" name="keep_undated_news" value="{% if settings.keep_undated_news %}on{% endif %}">
+  <label>Name<input name="feed_name"></label>
+  <label>URL<input name="feed_url"></label>
+  <label>Category<select name="feed_category"><option value="local">local</option><option value="interest">interest</option></select></label>
+  <label>Language<select name="feed_language"><option value="hu">hu</option><option value="en">en</option></select></label>
+  <label>Weight<input name="feed_weight" value="1"></label>
+  <label>Max items<input name="feed_max_items" value="20"></label>
+  <label>Enabled<input type="checkbox" name="feed_enabled" value="on" checked></label>
+  <button type="submit">Add feed</button>
+</form>
+<ul>
+{% for feed in feeds %}
+<li>{{ feed.name }} — {{ feed.url }}
+  <form method="post" action="/settings/news" style="display:inline"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="feed_action" value="delete"><input type="hidden" name="feed_id" value="{{ feed.id }}"><input type="hidden" name="keep_undated_news" value="{% if settings.keep_undated_news %}on{% endif %}"><button type="submit">Delete</button></form>
+</li>
+{% endfor %}
+</ul>
+<form method="post" action="/settings/news/test"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="keep_undated_news" value="{% if settings.keep_undated_news %}on{% endif %}"><button type="submit">{{ labels.test }}</button></form>
+<form method="post" action="/settings/news/rollback"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit">{{ labels.undo }}</button></form>
+{% endblock %}

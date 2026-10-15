@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Redirect
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from newspaper.dashboard_settings import checklist, mount as mount_settings
 from newspaper.db import connect, init_data, load_settings, read_secrets
 from newspaper.status_report import build_report, status_http_code
 
@@ -91,6 +92,14 @@ def create_app(data_dir: Path, *, clock=None, cache_seconds: float = CACHE_SECON
     app.state.session_secret = read_secrets(data_dir / "secrets.env").get("SESSION_SECRET", "")
     app.mount("/static", StaticFiles(directory=str(ROOT / "static")), name="static")
     _routes(app)
+    mount_settings(
+        app,
+        session=_session,
+        csrf_check=lambda sess, token: hmac.compare_digest(str(sess.get("csrf") or ""), str(token or "")),
+        form=_form,
+        db=_db,
+        now=_now,
+    )
     return app
 
 
@@ -301,6 +310,7 @@ def _home_context(request: Request, session: dict) -> dict:
         moment = _now(request)
         banner = _banner(conn, moment, session)
         editions = _editions(conn, request.app.state.data_dir, settings, moment)
+    labels = _labels(settings)
     return {
         "banner": banner,
         "editions": editions,
@@ -309,7 +319,17 @@ def _home_context(request: Request, session: dict) -> dict:
         "status_url": f"http://{HOST}:{PORT}/status",
         "last_status": getattr(request.app.state, "last_status_at", None),
         "csrf": session.get("csrf", ""),
+        "labels": labels,
+        "checklist": checklist(settings, request.app.state.data_dir),
+        "show_checklist": not all(done for _, done in checklist(settings, request.app.state.data_dir)),
     }
+
+
+def _labels(settings: dict) -> dict:
+    from newspaper.dashboard_settings import TEXT
+
+    lang = str(settings.get("dashboard_language") or "en")
+    return TEXT.get(lang, TEXT["en"])
 
 
 def _edition_context(request: Request, session: dict, edition_date: str) -> dict:

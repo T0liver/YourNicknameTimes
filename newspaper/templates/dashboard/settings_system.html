@@ -1,0 +1,19 @@
+{% extends "_settings_layout.html" %}
+{% block settings %}
+<form method="post" action="/settings/system">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label>{{ labels.admin_password }}<input type="password" name="admin_password" placeholder="{{ labels.secret_saved if secret_saved.ADMIN_PASSWORD_HASH else '' }}"></label>
+  <label>{{ labels.status_token_enabled }}<input type="checkbox" name="status_token_enabled" value="on"{% if settings.status_token_enabled %} checked{% endif %}></label>
+  <label>{{ labels.status_http_port }}<input name="status_http_port" value="{{ settings.status_http_port or '' }}"></label>
+  <label>{{ labels.status_bearer_token }}<input type="password" name="status_bearer_token" placeholder="{{ labels.secret_saved if secret_saved.STATUS_BEARER_TOKEN else '' }}"></label>
+  <button type="submit">{{ labels.save }}</button>
+</form>
+<p><a href="/settings/system/backup">{{ labels.backup }}</a> · <a href="/settings/system/diagnostics">{{ labels.diagnostics }}</a></p>
+<form method="post" action="/settings/system/restore">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label>{{ labels.restore }}<textarea name="backup"></textarea></label>
+  <button type="submit">{{ labels.restore }}</button>
+</form>
+<form method="post" action="/settings/system/test"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="status_token_enabled" value="{% if settings.status_token_enabled %}on{% endif %}"><input type="hidden" name="status_http_port" value="{{ settings.status_http_port or '' }}"><button type="submit">{{ labels.test }}</button></form>
+<form method="post" action="/settings/system/rollback"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit">{{ labels.undo }}</button></form>
+{% endblock %}

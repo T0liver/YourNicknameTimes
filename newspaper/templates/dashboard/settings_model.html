@@ -1,0 +1,13 @@
+{% extends "_settings_layout.html" %}
+{% block settings %}
+<form method="post" action="/settings/model">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label>{{ labels.model_on }}<input type="checkbox" name="model_on" value="on"{% if settings.model_on %} checked{% endif %}></label>
+  <label>{{ labels.model_name }}<input name="model_name" value="{{ settings.model_name }}"></label>
+  <label>{{ labels.send_task_descriptions }}<input type="checkbox" name="send_task_descriptions" value="on"{% if settings.send_task_descriptions %} checked{% endif %}></label>
+  <label>{{ labels.openrouter_api_key }}<input type="password" name="openrouter_api_key" placeholder="{{ labels.secret_saved if secret_saved.OPENROUTER_API_KEY else '' }}"></label>
+  <button type="submit">{{ labels.save }}</button>
+</form>
+<form method="post" action="/settings/model/test"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="model_on" value="{% if settings.model_on %}on{% endif %}"><input type="hidden" name="model_name" value="{{ settings.model_name }}"><input type="hidden" name="send_task_descriptions" value="{% if settings.send_task_descriptions %}on{% endif %}"><button type="submit">{{ labels.test }}</button></form>
+<form method="post" action="/settings/model/rollback"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit">{{ labels.undo }}</button></form>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "_settings_layout.html" %}
+{% block settings %}
+<form method="post" action="/settings/schedule">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label>{{ labels.weekday_start }}<input name="weekday_start" value="{{ settings.weekday_start }}"></label>
+  <label>{{ labels.weekend_edition }}<input type="checkbox" name="weekend_edition" value="on"{% if settings.weekend_edition %} checked{% endif %}></label>
+  <label>{{ labels.weekend_start }}<input name="weekend_start" value="{{ settings.weekend_start }}"></label>
+  <label>{{ labels.latest_acceptable }}<input name="latest_acceptable" value="{{ settings.latest_acceptable }}"></label>
+  <label>{{ labels.hold_mode }}<input type="checkbox" name="hold_mode" value="on"{% if settings.hold_mode %} checked{% endif %}></label>
+  <label>{{ labels.auto_approve }}<input type="checkbox" name="auto_approve" value="on"{% if settings.auto_approve %} checked{% endif %}></label>
+  <label>{{ labels.auto_approve_time }}<input name="auto_approve_time" value="{{ settings.auto_approve_time }}"></label>
+  <button type="submit">{{ labels.save }}</button>
+</form>
+<form method="post" action="/settings/schedule/test"><input type="hidden" name="csrf" value="{{ csrf }}">{% for k in ('weekday_start','weekend_start','latest_acceptable','auto_approve_time') %}<input type="hidden" name="{{ k }}" value="{{ settings[k] }}">{% endfor %}<input type="hidden" name="weekend_edition" value="{% if settings.weekend_edition %}on{% endif %}"><input type="hidden" name="hold_mode" value="{% if settings.hold_mode %}on{% endif %}"><input type="hidden" name="auto_approve" value="{% if settings.auto_approve %}on{% endif %}"><button type="submit">{{ labels.test }}</button></form>
+<form method="post" action="/settings/schedule/rollback"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit">{{ labels.undo }}</button></form>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block body %}
+<nav class="nav">
+  <a href="/">{{ labels.home }}</a>
+  <a href="/settings/general">{{ labels.settings }}</a>
+  {% for item in groups %}
+  <a href="/settings/{{ item }}"{% if item == group %} aria-current="page"{% endif %}>{{ labels[item] }}</a>
+  {% endfor %}
+</nav>
+{% if notice == 'saved' %}<p class="ok">{{ labels.saved }}</p>{% endif %}
+{% if notice == 'test_ok' %}<p class="ok">{{ labels.test_ok }}{% if flash %}: {{ flash }}{% endif %}</p>{% endif %}
+{% if notice == 'test_fail' %}<p class="bad">{% if flash %}{{ flash }}{% else %}Test failed.{% endif %}</p>{% endif %}
+{% if notice == 'invalid' %}<p class="bad">{{ labels.invalid }}</p>{% endif %}
+{% if notice == 'rolled_back' %}<p class="ok">Rolled back.</p>{% endif %}
+{% block settings %}{% endblock %}
+{% endblock %}

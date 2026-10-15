@@ -1,0 +1,28 @@
+{% extends "_settings_layout.html" %}
+{% block settings %}
+<form method="post" action="/settings/delivery">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label>{{ labels.print_enabled }}<input type="checkbox" name="print_enabled" value="on"{% if settings.print_enabled %} checked{% endif %}></label>
+  <label>{{ labels.upload_enabled }}<input type="checkbox" name="upload_enabled" value="on"{% if settings.upload_enabled %} checked{% endif %}></label>
+  <label>{{ labels.cloud_level }}<select name="cloud_level"><option value="trimmed"{% if settings.cloud_level == 'trimmed' %} selected{% endif %}>trimmed</option><option value="full"{% if settings.cloud_level == 'full' %} selected{% endif %}>full</option></select></label>
+  <label>{{ labels.local_retention_days }}<input name="local_retention_days" value="{{ settings.local_retention_days }}"></label>
+  <label>{{ labels.dropbox_retention_days }}<input name="dropbox_retention_days" value="{{ settings.dropbox_retention_days or '' }}"></label>
+  <label>{{ labels.override_date }}<input name="override_date" value="{{ settings.override_date }}"></label>
+  <label>{{ labels.override_print }}<select name="override_print"><option value="">default</option><option value="on"{% if settings.override_print == True %} selected{% endif %}>on</option><option value="off"{% if settings.override_print == False %} selected{% endif %}>off</option></select></label>
+  <label>{{ labels.override_upload }}<select name="override_upload"><option value="">default</option><option value="on"{% if settings.override_upload == True %} selected{% endif %}>on</option><option value="off"{% if settings.override_upload == False %} selected{% endif %}>off</option></select></label>
+  <button type="submit">{{ labels.save }}</button>
+</form>
+<form method="post" action="/settings/delivery/test">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="print_enabled" value="{% if settings.print_enabled %}on{% endif %}">
+  <input type="hidden" name="upload_enabled" value="{% if settings.upload_enabled %}on{% endif %}">
+  <input type="hidden" name="cloud_level" value="{{ settings.cloud_level }}">
+  <input type="hidden" name="local_retention_days" value="{{ settings.local_retention_days }}">
+  <input type="hidden" name="dropbox_retention_days" value="{{ settings.dropbox_retention_days or '' }}">
+  <input type="hidden" name="override_date" value="{{ settings.override_date }}">
+  <input type="hidden" name="override_print" value="{% if settings.override_print == True %}on{% elif settings.override_print == False %}off{% endif %}">
+  <input type="hidden" name="override_upload" value="{% if settings.override_upload == True %}on{% elif settings.override_upload == False %}off{% endif %}">
+  <button type="submit">{{ labels.test }}</button>
+</form>
+<form method="post" action="/settings/delivery/rollback"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit">{{ labels.undo }}</button></form>
+{% endblock %}

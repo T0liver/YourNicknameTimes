@@ -14,3 +14,12 @@ body {
 }
 form { display: inline; }
 a { color: var(--ink); }
+.nav { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin-bottom: 1rem; }
+label { display: block; margin: 0.5rem 0; }
+input, select, textarea { width: 100%; max-width: 24rem; box-sizing: border-box; }
+.ok { color: var(--ok); }
+.bad { color: var(--bad); }
+#checklist ul { list-style: none; padding: 0; }
+@media (min-width: 40rem) {
+  body { max-width: 42rem; margin: 1rem auto; }
+}

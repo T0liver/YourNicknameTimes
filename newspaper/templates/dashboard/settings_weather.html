@@ -1,0 +1,38 @@
+{% extends "_settings_layout.html" %}
+{% block settings %}
+<form method="post" action="/settings/weather">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label>{{ labels.latitude }}<input name="latitude" value="{{ settings.latitude }}"></label>
+  <label>{{ labels.longitude }}<input name="longitude" value="{{ settings.longitude }}"></label>
+  <label>Units<select name="units"><option value="celsius" selected>celsius</option></select></label>
+  <label>{{ labels.xkcd_on }}<input type="checkbox" name="xkcd_on" value="on"{% if settings.xkcd_on %} checked{% endif %}></label>
+  <label>{{ labels.extras_on }}<input type="checkbox" name="extras_on" value="on"{% if settings.extras_on %} checked{% endif %}></label>
+  <label>{{ labels.name_day_on }}<input type="checkbox" name="name_day_on" value="on"{% if settings.name_day_on %} checked{% endif %}></label>
+  <label>{{ labels.sun_on }}<input type="checkbox" name="sun_on" value="on"{% if settings.sun_on %} checked{% endif %}></label>
+  <label>{{ labels.moon_on }}<input type="checkbox" name="moon_on" value="on"{% if settings.moon_on %} checked{% endif %}></label>
+  <label>{{ labels.on_this_day_on }}<input type="checkbox" name="on_this_day_on" value="on"{% if settings.on_this_day_on %} checked{% endif %}></label>
+  <label>{{ labels.rates_on }}<input type="checkbox" name="rates_on" value="on"{% if settings.rates_on %} checked{% endif %}></label>
+  {% for day in rotation_days %}
+  <label>{{ day }}<select name="rotation_{{ day }}"><option value="xkcd"{% if settings.daily_rotation[day] == 'xkcd' %} selected{% endif %}>xkcd</option><option value="sudoku"{% if settings.daily_rotation[day] == 'sudoku' %} selected{% endif %}>sudoku</option></select></label>
+  {% endfor %}
+  <button type="submit">{{ labels.save }}</button>
+</form>
+<form method="post" action="/settings/weather/test">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input type="hidden" name="latitude" value="{{ settings.latitude }}">
+  <input type="hidden" name="longitude" value="{{ settings.longitude }}">
+  <input type="hidden" name="units" value="{{ settings.units }}">
+  <input type="hidden" name="xkcd_on" value="{% if settings.xkcd_on %}on{% endif %}">
+  <input type="hidden" name="extras_on" value="{% if settings.extras_on %}on{% endif %}">
+  <input type="hidden" name="name_day_on" value="{% if settings.name_day_on %}on{% endif %}">
+  <input type="hidden" name="sun_on" value="{% if settings.sun_on %}on{% endif %}">
+  <input type="hidden" name="moon_on" value="{% if settings.moon_on %}on{% endif %}">
+  <input type="hidden" name="on_this_day_on" value="{% if settings.on_this_day_on %}on{% endif %}">
+  <input type="hidden" name="rates_on" value="{% if settings.rates_on %}on{% endif %}">
+  {% for day in rotation_days %}
+  <input type="hidden" name="rotation_{{ day }}" value="{{ settings.daily_rotation[day] }}">
+  {% endfor %}
+  <button type="submit">{{ labels.test }}</button>
+</form>
+<form method="post" action="/settings/weather/rollback"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit">{{ labels.undo }}</button></form>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "_settings_layout.html" %}
+{% block settings %}
+<form method="post" action="/settings/dropbox">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label>{{ labels.dropbox_app_key }}<input type="password" name="dropbox_app_key" placeholder="{{ labels.secret_saved if secret_saved.DROPBOX_APP_KEY else '' }}"></label>
+  <label>{{ labels.dropbox_app_secret }}<input type="password" name="dropbox_app_secret" placeholder="{{ labels.secret_saved if secret_saved.DROPBOX_APP_SECRET else '' }}"></label>
+  <label>{{ labels.dropbox_refresh_token }}<input type="password" name="dropbox_refresh_token" placeholder="{{ labels.secret_saved if secret_saved.DROPBOX_REFRESH_TOKEN else '' }}"></label>
+  <button type="submit">{{ labels.save }}</button>
+</form>
+<form method="post" action="/settings/dropbox/test"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit">{{ labels.test }}</button></form>
+<form method="post" action="/settings/dropbox/rollback"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit">{{ labels.undo }}</button></form>
+{% endblock %}

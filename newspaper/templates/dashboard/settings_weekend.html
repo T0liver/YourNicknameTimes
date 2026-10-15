@@ -1,0 +1,17 @@
+{% extends "_settings_layout.html" %}
+{% block settings %}
+<form method="post" action="/settings/weekend">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label>{{ labels.weekend_mood }}
+    <select name="weekend_mood">
+      <option value="light"{% if settings.weekend_mood == 'light' %} selected{% endif %}>light</option>
+      <option value="neutral"{% if settings.weekend_mood == 'neutral' %} selected{% endif %}>neutral</option>
+    </select>
+  </label>
+  <label>{{ labels.show_sun }}<input type="checkbox" name="show_sun" value="on"{% if settings.show_sun %} checked{% endif %}></label>
+  <label>{{ labels.greeting }}<textarea name="greeting">{{ settings.greeting }}</textarea></label>
+  <button type="submit">{{ labels.save }}</button>
+</form>
+<form method="post" action="/settings/weekend/test"><input type="hidden" name="csrf" value="{{ csrf }}"><input type="hidden" name="weekend_mood" value="{{ settings.weekend_mood }}"><input type="hidden" name="show_sun" value="{% if settings.show_sun %}on{% endif %}"><input type="hidden" name="greeting" value="{{ settings.greeting }}"><button type="submit">{{ labels.test }}</button></form>
+<form method="post" action="/settings/weekend/rollback"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit">{{ labels.undo }}</button></form>
+{% endblock %}
