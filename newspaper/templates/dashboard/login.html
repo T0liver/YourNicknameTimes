@@ -2,7 +2,10 @@
 {% block body %}
 <form method="post" action="/login">
   <input type="hidden" name="csrf" value="{{ csrf }}">
-  <label>Password <input type="password" name="password" autofocus></label>
+  {% if needs_setup %}
+  <label>Setup code <input type="password" name="setup_code" autofocus></label>
+  {% endif %}
+  <label>Password <input type="password" name="password"{% if not needs_setup %} autofocus{% endif %}></label>
   <button type="submit">Sign in</button>
   {% if error %}<p>{{ error }}</p>{% endif %}
 </form>

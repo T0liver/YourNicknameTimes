@@ -1,12 +1,14 @@
+import asyncio
 import json
 import re
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from fastapi.testclient import TestClient
+from httpx import ASGITransport, AsyncClient
 
-from newspaper.db import connect, init_data, save_settings, load_settings
-from newspaper.web import create_app, hash_password, serve
+from newspaper.db import connect, init_data, read_secrets, save_settings, load_settings
+from newspaper.web import create_app, hash_password, serve, verify_password
 
 ZONE = ZoneInfo("Europe/Budapest")
 NINE = datetime(2026, 10, 14, 9, 0, tzinfo=ZONE)
@@ -77,6 +79,144 @@ def _jobs(data, kind):
         return conn.execute("SELECT status FROM jobs WHERE kind = ?", (kind,)).fetchall()
     finally:
         conn.close()
+
+
+def test_existing_hash_asks_for_the_password_only(tmp_path, capsys):
+    data = _prepare(tmp_path)
+    client = TestClient(_app(data))
+    page = client.get("/login")
+    assert 'name="password"' in page.text
+    assert 'name="setup_code"' not in page.text
+    assert "setup code:" not in capsys.readouterr().out
+
+
+def test_setup_code_is_printed_once_and_a_wrong_code_leaves_the_hash_empty(tmp_path, capsys):
+    data = tmp_path / "data"
+    init_data(data)
+    app = _app(data)
+    printed = capsys.readouterr().out
+    code = printed.split("setup code:", 1)[1].strip().splitlines()[0].strip()
+    client = TestClient(app)
+    page = client.get("/login")
+    assert 'name="setup_code"' in page.text
+    assert code not in page.text
+    bad = client.post(
+        "/login",
+        data={"setup_code": "nope", "password": "new-secret", "csrf": _csrf(page.text)},
+        follow_redirects=False,
+    )
+    assert bad.status_code == 200
+    assert "That setup code does not match." in bad.text
+    assert read_secrets(data / "secrets.env").get("ADMIN_PASSWORD_HASH") == ""
+    claimed = client.post(
+        "/login",
+        data={"setup_code": code, "password": "new-secret", "csrf": _csrf(bad.text)},
+        follow_redirects=False,
+    )
+    assert claimed.status_code == 303
+    assert verify_password("new-secret", read_secrets(data / "secrets.env")["ADMIN_PASSWORD_HASH"])
+    _app(data)
+    assert "setup code:" not in capsys.readouterr().out
+    later = TestClient(_app(data)).get("/login")
+    assert 'name="setup_code"' not in later.text
+    assert 'name="password"' in later.text
+
+
+def test_login_failures_from_one_address_return_429(tmp_path):
+    data = _prepare(tmp_path)
+    app = _app(data)
+    client = TestClient(app)
+    for _ in range(5):
+        token = _csrf(client.get("/login").text)
+        failed = client.post("/login", data={"password": "nope", "csrf": token}, follow_redirects=False)
+        assert failed.status_code == 200
+    blocked = client.post(
+        "/login",
+        data={"password": PASSWORD, "csrf": _csrf(client.get("/login").text)},
+        follow_redirects=False,
+    )
+    assert blocked.status_code == 429
+    assert blocked.content == b""
+    other = TestClient(app)
+    page = other.get("/login", headers={"x-forwarded-for": "192.168.1.40"})
+    allowed = other.post(
+        "/login",
+        data={"password": PASSWORD, "csrf": _csrf(page.text)},
+        headers={"x-forwarded-for": "192.168.1.40"},
+        follow_redirects=False,
+    )
+    assert allowed.status_code == 303
+    restarted = TestClient(_app(data))
+    retry = restarted.post(
+        "/login",
+        data={"password": "nope", "csrf": _csrf(restarted.get("/login").text)},
+        follow_redirects=False,
+    )
+    assert retry.status_code == 200
+
+
+def test_a_successful_login_does_not_consume_a_failure_slot(tmp_path):
+    data = _prepare(tmp_path)
+    client = TestClient(_app(data))
+    for _ in range(4):
+        failed = client.post(
+            "/login",
+            data={"password": "nope", "csrf": _csrf(client.get("/login").text)},
+            follow_redirects=False,
+        )
+        assert failed.status_code == 200
+    signed = client.post(
+        "/login",
+        data={"password": PASSWORD, "csrf": _csrf(client.get("/login").text)},
+        follow_redirects=False,
+    )
+    assert signed.status_code == 303
+    again = client.post(
+        "/login",
+        data={"password": "nope", "csrf": _csrf(client.get("/login").text)},
+        follow_redirects=False,
+    )
+    assert again.status_code == 200
+
+
+def test_overlapping_login_failures_share_one_cap(tmp_path):
+    data = _prepare(tmp_path)
+    app = _app(data)
+    client = TestClient(app)
+    page = client.get("/login")
+    token = _csrf(page.text)
+    cookie = client.cookies.get("ynt_csrf")
+
+    async def attempt():
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as http:
+            http.cookies.set("ynt_csrf", cookie)
+            response = await http.post("/login", data={"password": "nope", "csrf": token})
+            return response.status_code
+
+    async def main():
+        return await asyncio.gather(*(attempt() for _ in range(8)))
+
+    codes = asyncio.run(main())
+    assert codes.count(200) == 5
+    assert codes.count(429) == 3
+
+
+def test_https_forwarding_marks_the_cookie_secure(tmp_path):
+    data = _prepare(tmp_path)
+    plain = TestClient(_app(data)).get("/login")
+    assert "secure" not in plain.headers["set-cookie"].lower()
+    client = TestClient(_app(data), base_url="https://newspaper.local")
+    secure = client.get("/login", headers={"x-forwarded-proto": "https"})
+    assert "secure" in secure.headers["set-cookie"].lower()
+    signed = client.post(
+        "/login",
+        data={"password": PASSWORD, "csrf": _csrf(secure.text)},
+        headers={"x-forwarded-proto": "https"},
+        follow_redirects=False,
+    )
+    assert signed.status_code == 303
+    assert "secure" in signed.headers["set-cookie"].lower()
 
 
 def test_wrong_password_stays_on_the_form(tmp_path):

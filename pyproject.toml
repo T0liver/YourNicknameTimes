@@ -27,6 +27,7 @@ newspaper-render = "newspaper.render:main"
 newspaper-edition = "newspaper.edition_build:main"
 newspaper-worker = "newspaper.worker:main"
 newspaper-web = "newspaper.web:main"
+newspaper-lan-sync = "newspaper.lan:main"
 
 [tool.setuptools.packages.find]
 include = ["newspaper*"]

@@ -1,0 +1,17 @@
+[Unit]
+Description=Newspaper dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+Group=__USER__
+WorkingDirectory=__ROOT__
+ExecStart=__ROOT__/.venv/bin/newspaper-web --data-dir __DATA__
+Restart=always
+RestartSec=2
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

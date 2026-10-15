@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi.testclient import TestClient
 
-from newspaper.db import connect, init_data
+from newspaper.db import connect, init_data, load_settings, save_settings, set_secret
 from newspaper.web import create_app, hash_password
 
 ZONE = ZoneInfo("Europe/Budapest")
@@ -155,6 +155,76 @@ def test_unreadable_database_hides_the_path(tmp_path):
 
 def Path_extra(data, suffix):
     return data / f"newspaper.db{suffix}"
+
+
+def _token(data, *, enabled, token):
+    conn = connect(data / "newspaper.db")
+    try:
+        body = load_settings(conn)
+        body["status_token_enabled"] = enabled
+        save_settings(conn, body)
+    finally:
+        conn.close()
+    set_secret(data / "secrets.env", "STATUS_BEARER_TOKEN", token)
+
+
+def test_status_stays_open_when_the_token_switch_is_off(tmp_path):
+    data = _prepare(tmp_path)
+    _heartbeat(data, NINE)
+    _run(data)
+    _token(data, enabled=False, token="quiet-token")
+    response = TestClient(_app(data)).get("/status")
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+    head = TestClient(_app(data)).head("/status")
+    assert head.status_code == 200
+    assert head.content == b""
+
+
+def test_status_requires_the_bearer_when_the_switch_is_on(tmp_path):
+    data = _prepare(tmp_path)
+    _heartbeat(data, NINE)
+    _run(data)
+    _token(data, enabled=True, token="quiet-token")
+    client = TestClient(_app(data))
+    missing = client.get("/status")
+    assert missing.status_code == 401
+    assert missing.content == b""
+    wrong = client.get("/status", headers={"authorization": "Bearer other-token"})
+    assert wrong.status_code == 401
+    assert wrong.content == b""
+    head = client.head("/status", headers={"authorization": "Bearer quiet-token"})
+    assert head.status_code == 200
+    assert head.content == b""
+    allowed = client.get("/status", headers={"authorization": "Bearer quiet-token"})
+    assert allowed.status_code == 200
+    assert allowed.json()["status"] == "ok"
+    assert "quiet-token" not in allowed.text
+
+
+def test_enabled_token_with_an_empty_secret_is_401(tmp_path):
+    data = _prepare(tmp_path)
+    _heartbeat(data, NINE)
+    _run(data)
+    _token(data, enabled=True, token="")
+    response = TestClient(_app(data)).get("/status", headers={"authorization": "Bearer "})
+    assert response.status_code == 401
+    assert response.content == b""
+
+
+def test_status_flood_from_one_address_returns_429(tmp_path):
+    data = _prepare(tmp_path)
+    _heartbeat(data, NINE)
+    _run(data)
+    app = _app(data)
+    client = TestClient(app)
+    for _ in range(60):
+        assert client.get("/status").status_code == 200
+    blocked = client.get("/status")
+    assert blocked.status_code == 429
+    assert blocked.content == b""
+    allowed = TestClient(app).get("/status", headers={"x-forwarded-for": "192.168.1.41"})
+    assert allowed.status_code == 200
 
 
 def test_status_omits_private_text(tmp_path):

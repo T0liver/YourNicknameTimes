@@ -1,3 +1,4 @@
+import json
 import re
 
 from fastapi.testclient import TestClient
@@ -118,6 +119,76 @@ def test_system_stores_status_token_settings_without_exposing_secret(tmp_path):
     assert secrets.get("STATUS_BEARER_TOKEN") == "quiet-token"
     again = client.get("/settings/system")
     assert "quiet-token" not in again.text
+    assert (data / "status-http.port").read_text(encoding="utf-8") == "9090\n"
+    assert "quiet-token" not in (data / "status-http.port").read_text(encoding="utf-8")
+    backup = client.get("/settings/system/backup")
+    assert "quiet-token" not in backup.text
+    cleared = client.post(
+        "/settings/system",
+        data={"csrf": csrf, "status_http_port": "", "status_bearer_token": ""},
+        follow_redirects=False,
+    )
+    assert cleared.status_code == 303
+    assert (data / "status-http.port").read_text(encoding="utf-8") == ""
+
+
+def test_reserved_status_ports_are_rejected(tmp_path):
+    data = _prepare(tmp_path)
+    client = _login(data)
+    csrf = _csrf(client.get("/settings/system").text)
+    saved = client.post(
+        "/settings/system",
+        data={"csrf": csrf, "status_http_port": "9090"},
+        follow_redirects=False,
+    )
+    assert saved.status_code == 303
+    for port in ("22", "80", "443"):
+        rejected = client.post(
+            "/settings/system",
+            data={"csrf": csrf, "status_http_port": port},
+            follow_redirects=False,
+        )
+        assert rejected.status_code == 400
+        assert (data / "status-http.port").read_text(encoding="utf-8") == "9090\n"
+    conn = connect(data / "newspaper.db")
+    try:
+        assert load_settings(conn)["status_http_port"] == 9090
+    finally:
+        conn.close()
+
+
+def test_rollback_and_restore_write_the_status_port(tmp_path):
+    data = _prepare(tmp_path)
+    client = _login(data)
+    csrf = _csrf(client.get("/settings/system").text)
+    assert (
+        client.post(
+            "/settings/system",
+            data={"csrf": csrf, "status_http_port": "9090"},
+            follow_redirects=False,
+        ).status_code
+        == 303
+    )
+    assert (
+        client.post(
+            "/settings/system",
+            data={"csrf": csrf, "status_http_port": "9091"},
+            follow_redirects=False,
+        ).status_code
+        == 303
+    )
+    rolled = client.post("/settings/system/rollback", data={"csrf": csrf}, follow_redirects=False)
+    assert rolled.status_code == 303
+    assert (data / "status-http.port").read_text(encoding="utf-8") == "9090\n"
+    backup = client.get("/settings/system/backup").json()
+    backup["settings"]["status_http_port"] = 9095
+    restored = client.post(
+        "/settings/system/restore",
+        data={"csrf": csrf, "backup": json.dumps(backup)},
+        follow_redirects=False,
+    )
+    assert restored.status_code == 303
+    assert (data / "status-http.port").read_text(encoding="utf-8") == "9095\n"
 
 
 def test_schedule_rejects_bad_time(tmp_path):

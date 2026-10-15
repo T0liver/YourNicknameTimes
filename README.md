@@ -27,7 +27,7 @@ The first run creates the database and a secrets file, then writes today's paper
 .venv/bin/newspaper-edition --data-dir data
 ```
 
-`data/newspaper.db` starts at volume 1 with an empty calendar host, Telex as the local feed, and Wired as the interest feed. Until a host is saved, the schedule blocks stay empty. `data/secrets.env` is created with mode 0600. A fresh file has `CALDAV_PASSWORD=`, `DROPBOX_REFRESH_TOKEN=`, `DROPBOX_APP_KEY=`, `DROPBOX_APP_SECRET=`, `OPENROUTER_API_KEY=`, `ADMIN_PASSWORD_HASH=`, and `SESSION_SECRET=`. The same blank lines are in `data/secrets.env.example`. An existing secrets file keeps its lines and gains any of those that are missing. The edition is `data/editions/YYYY-MM-DD/edition.json` plus `print.pdf`. Any drops are listed in `run.log` in that folder. Volume goes up by one after the PDF is a single page.
+`data/newspaper.db` starts at volume 1 with an empty calendar host, Telex as the local feed, and Wired as the interest feed. Until a host is saved, the schedule blocks stay empty. `data/secrets.env` is created with mode 0600. A fresh file has `CALDAV_PASSWORD=`, `DROPBOX_REFRESH_TOKEN=`, `DROPBOX_APP_KEY=`, `DROPBOX_APP_SECRET=`, `OPENROUTER_API_KEY=`, `ADMIN_PASSWORD_HASH=`, `SESSION_SECRET=`, `STATUS_BEARER_TOKEN=`, and `SETUP_CODE_HASH=`. The same blank lines are in `data/secrets.env.example`. An existing secrets file keeps its lines and gains any of those that are missing. The edition is `data/editions/YYYY-MM-DD/edition.json` plus `print.pdf`. Any drops are listed in `run.log` in that folder. Volume goes up by one after the PDF is a single page.
 
 `newspaper-render` renders the packaged fixture.
 
@@ -47,11 +47,23 @@ A pending `run_now` or `preview` job runs only when NTP is synced and the job da
 
 ## Serve the dashboard
 
-`newspaper-web` listens on `127.0.0.1:8080`. The first start prints `admin password:` once and stores the hash in `data/secrets.env`. An empty `SESSION_SECRET=` is filled and is not printed.
+`newspaper-web` listens on `127.0.0.1:8080`. Caddy serves `https://newspaper.local` and `https://<pi-ip>` with an internal certificate and proxies to that address. The browser warns once, until you install the local root. Stopping the app makes Caddy return 502.
+
+The first start with no admin hash prints `setup code:` once and stores the hash in `data/secrets.env`. The form asks for that code and a new password. A wrong code leaves the password hash empty. Later starts ask for the password. An empty `SESSION_SECRET=` is filled and is not printed.
 
 ```bash
 .venv/bin/newspaper-web --data-dir data
 ```
 
-Sign in with that password. Approve and Reject sit on the banner while a hold is pending. Run now and Preview are on the home page. Reprint and re-upload are on the edition page. Those actions insert a job. The worker prints and uploads. `GET /status` and `HEAD /status` stay open.
+Sign in with that password. Approve and Reject sit on the banner while a hold is pending. Run now and Preview are on the home page. Reprint and re-upload are on the edition page. Those actions insert a job. The worker prints and uploads.
+
+`GET /status` and `HEAD /status` stay open while the bearer switch is off. With the switch on, the request needs `Authorization: Bearer` matching `STATUS_BEARER_TOKEN`. A missing token, a wrong token, or an empty secret is 401 with an empty body. Login allows 5 failures from one address in 15 minutes, and `/status` allows 60 requests from one address in one minute. The next call is 429. Those counts clear when the web process restarts. A system save writes `data/status-http.port`. A number in that file is plain HTTP and answers only `/status`. An empty file closes the port.
+
+On the Pi, with the hostname `newspaper` and the venv already installed, the install uses this checkout's `data/` directory. Set `NEWSPAPER_DATA_DIR` first if the database lives somewhere else.
+
+```bash
+sudo ./deploy/install.sh
+```
+
+Avahi publishes `newspaper.local`. The install enables Avahi and unattended security upgrades. SSH stays keys-only. The firewall allows TCP 443 and TCP 22 from the LAN, UDP 5353 to the mDNS group, and the status port only while `data/status-http.port` has a number.
 

@@ -33,6 +33,7 @@ from newspaper.db import (
     set_secret,
 )
 from newspaper.http import check_url
+from newspaper.lan import write_status_port
 from newspaper.sources.almanac import collect_almanac
 from newspaper.sources.caldav_source import collect_caldav, connect as caldav_connect
 from newspaper.sources.daily import collect_daily
@@ -65,6 +66,7 @@ SECRET_NAMES = (
     "DROPBOX_APP_KEY",
     "DROPBOX_APP_SECRET",
     "STATUS_BEARER_TOKEN",
+    "SETUP_CODE_HASH",
 )
 
 TEXT = {
@@ -282,6 +284,8 @@ def mount(app: FastAPI, *, session, csrf_check, form, db, now) -> None:
             save_settings(conn, updated)
             for name, value in secret_updates.items():
                 set_secret(secrets_path, name, value)
+            if group == "system":
+                write_status_port(data_dir, updated.get("status_http_port"))
         return RedirectResponse(f"/settings/{group}?notice=saved", status_code=303)
 
     @app.post("/settings/{group}/test")
@@ -323,8 +327,10 @@ def mount(app: FastAPI, *, session, csrf_check, form, db, now) -> None:
         body = await form(request)
         if not csrf_check(sess, body.get("csrf", "")):
             return HTMLResponse("Forbidden", status_code=403)
+        data_dir = request.app.state.data_dir
         with db(request) as conn:
-            rollback_settings(conn)
+            if rollback_settings(conn):
+                write_status_port(data_dir, load_settings(conn).get("status_http_port"))
         return RedirectResponse(f"/settings/{group}?notice=rolled_back", status_code=303)
 
     @app.get("/settings/news/opml")
@@ -402,6 +408,7 @@ def mount(app: FastAPI, *, session, csrf_check, form, db, now) -> None:
                         "enabled": int(row["enabled"]),
                     },
                 )
+        write_status_port(request.app.state.data_dir, settings.get("status_http_port"))
         return RedirectResponse("/settings/system?notice=saved", status_code=303)
 
     @app.get("/settings/system/diagnostics")
@@ -603,6 +610,8 @@ def _apply_group(
             updated["status_http_port"] = None
         else:
             _set_int(updated, "status_http_port", port_raw, errors, minimum=1, maximum=65535)
+            if "status_http_port" not in errors and updated.get("status_http_port") in (22, 80, 443):
+                errors["status_http_port"] = "invalid"
         token = form.get("status_bearer_token", "").strip()
         if token:
             secrets["STATUS_BEARER_TOKEN"] = token

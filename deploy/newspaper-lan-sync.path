@@ -1,0 +1,9 @@
+[Unit]
+Description=Watch the status port file
+
+[Path]
+PathChanged=__DATA__/status-http.port
+Unit=newspaper-lan-sync.service
+
+[Install]
+WantedBy=multi-user.target

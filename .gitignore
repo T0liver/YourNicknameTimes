@@ -15,6 +15,7 @@ id_rsa
 id_ed25519
 
 # Local tooling
+uv.lock
 node_modules/
 .venv/
 venv/
@@ -46,6 +47,7 @@ Thumbs.db
 
 # Local edition data
 data/secrets.env
+data/status-http.port
 data/newspaper.db
 data/editions/
 data/cache/

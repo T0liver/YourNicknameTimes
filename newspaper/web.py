@@ -7,6 +7,8 @@ import hashlib
 import hmac
 import json
 import secrets as pysecrets
+import threading
+import time
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -54,10 +56,10 @@ def verify_password(password: str, stored: str) -> bool:
 
 def ensure_admin(path: Path) -> None:
     found = read_secrets(path)
-    if not found.get("ADMIN_PASSWORD_HASH"):
-        password = pysecrets.token_urlsafe(12)
-        _write_secret(path, "ADMIN_PASSWORD_HASH", hash_password(password))
-        print(f"admin password: {password}", flush=True)
+    if not found.get("ADMIN_PASSWORD_HASH") and not found.get("SETUP_CODE_HASH"):
+        code = pysecrets.token_urlsafe(12)
+        _write_secret(path, "SETUP_CODE_HASH", hash_password(code))
+        print(f"setup code: {code}", flush=True)
     if not found.get("SESSION_SECRET"):
         _write_secret(path, "SESSION_SECRET", pysecrets.token_hex(32))
 
@@ -89,6 +91,8 @@ def create_app(data_dir: Path, *, clock=None, cache_seconds: float = CACHE_SECON
     app.state.cache = None
     app.state.uptime_seconds = uptime_seconds
     app.state.cpu_temp_c = cpu_temp_c
+    app.state.hits = {}
+    app.state.hit_lock = threading.RLock()
     app.state.session_secret = read_secrets(data_dir / "secrets.env").get("SESSION_SECRET", "")
     app.mount("/static", StaticFiles(directory=str(ROOT / "static")), name="static")
     _routes(app)
@@ -125,28 +129,36 @@ def _uvicorn(app, host: str, port: int) -> None:
 def _routes(app: FastAPI) -> None:
     @app.get("/login")
     def login_form(request: Request):
-        token = pysecrets.token_urlsafe(32)
-        response = TEMPLATES.TemplateResponse(request, "login.html", {"csrf": token, "error": ""})
-        _csrf_cookie(response, request, token)
-        return response
+        return _login_page(request, "")
 
     @app.post("/login")
     async def login_submit(request: Request):
         form = await _form(request)
         if not hmac.compare_digest(form.get("csrf", ""), _csrf_cookie_value(request)):
             return HTMLResponse("Forbidden", status_code=403)
-        stored = read_secrets(request.app.state.data_dir / "secrets.env").get("ADMIN_PASSWORD_HASH", "")
-        if not verify_password(form.get("password", ""), stored):
-            token = pysecrets.token_urlsafe(32)
-            response = TEMPLATES.TemplateResponse(
-                request, "login.html", {"csrf": token, "error": "That password does not match."}
-            )
-            _csrf_cookie(response, request, token)
-            return response
-        token = pysecrets.token_urlsafe(32)
-        response = RedirectResponse("/", status_code=303)
-        response.set_cookie("ynt", _sign(request.app.state.session_secret, {"csrf": token}), httponly=True, samesite="lax")
-        return response
+        path = request.app.state.data_dir / "secrets.env"
+        with request.app.state.hit_lock:
+            if _over_limit(request, "login", limit=5, window=15 * 60, record=False):
+                return Response(status_code=429)
+            secrets = read_secrets(path)
+            stored = secrets.get("ADMIN_PASSWORD_HASH", "")
+            error = None
+            if not stored:
+                code_hash = secrets.get("SETUP_CODE_HASH", "")
+                password = form.get("password", "")
+                if not verify_password(form.get("setup_code", ""), code_hash):
+                    error = "That setup code does not match."
+                elif not password:
+                    error = "Choose a password."
+                else:
+                    _write_secret(path, "ADMIN_PASSWORD_HASH", hash_password(password))
+            elif not verify_password(form.get("password", ""), stored):
+                error = "That password does not match."
+            if error is not None:
+                _over_limit(request, "login", limit=5, window=15 * 60, record=True)
+        if error is None:
+            return _logged_in(request)
+        return _login_page(request, error)
 
     @app.get("/")
     def home(request: Request):
@@ -217,6 +229,10 @@ def _routes(app: FastAPI) -> None:
 
     @app.api_route("/status", methods=["GET", "HEAD"])
     def status(request: Request):
+        if _over_limit(request, "status", limit=60, window=60, record=True):
+            return Response(status_code=429)
+        if _status_denied(request):
+            return Response(status_code=401)
         body, state = _status_body(request)
         code = status_http_code(state, strict=request.query_params.get("strict") == "1")
         headers = {"Cache-Control": "no-store"}
@@ -470,12 +486,81 @@ def _unsign(secret: str, token: str) -> dict | None:
     return loaded if isinstance(loaded, dict) else None
 
 
+def _login_page(request: Request, error: str) -> Response:
+    token = pysecrets.token_urlsafe(32)
+    secrets = read_secrets(request.app.state.data_dir / "secrets.env")
+    response = TEMPLATES.TemplateResponse(
+        request,
+        "login.html",
+        {"csrf": token, "error": error, "needs_setup": not secrets.get("ADMIN_PASSWORD_HASH")},
+    )
+    _csrf_cookie(response, request, token)
+    return response
+
+
+def _logged_in(request: Request) -> RedirectResponse:
+    token = pysecrets.token_urlsafe(32)
+    response = RedirectResponse("/", status_code=303)
+    response.set_cookie(
+        "ynt",
+        _sign(request.app.state.session_secret, {"csrf": token}),
+        httponly=True,
+        samesite="lax",
+        secure=_https(request),
+    )
+    return response
+
+
+def _status_denied(request: Request) -> bool:
+    try:
+        with _db(request) as conn:
+            settings = load_settings(conn)
+    except Exception:
+        return False
+    if not settings.get("status_token_enabled"):
+        return False
+    token = read_secrets(request.app.state.data_dir / "secrets.env").get("STATUS_BEARER_TOKEN", "")
+    header = request.headers.get("authorization", "")
+    scheme, _, value = header.partition(" ")
+    if scheme.lower() != "bearer" or not token or not value or len(value) != len(token):
+        return True
+    return not hmac.compare_digest(value, token)
+
+
+def _over_limit(request: Request, bucket: str, *, limit: int, window: float, record: bool) -> bool:
+    now = time.monotonic()
+    key = f"{bucket}:{_client_addr(request)}"
+    with request.app.state.hit_lock:
+        hits = request.app.state.hits
+        recent = [stamp for stamp in hits.get(key, []) if now - stamp < window]
+        blocked = len(recent) >= limit
+        if record and not blocked:
+            recent.append(now)
+        hits[key] = recent
+        return blocked
+
+
+def _client_addr(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for", "")
+    if forwarded.strip():
+        return forwarded.split(",")[0].strip() or "unknown"
+    if request.client is None or not request.client.host:
+        return "unknown"
+    return request.client.host
+
+
+def _https(request: Request) -> bool:
+    proto = request.headers.get("x-forwarded-proto", "")
+    return proto.split(",")[0].strip().lower() == "https"
+
+
 def _csrf_cookie(response: Response, request: Request, token: str) -> None:
     response.set_cookie(
         "ynt_csrf",
         _sign(request.app.state.session_secret, {"csrf": token}),
         httponly=True,
         samesite="lax",
+        secure=_https(request),
     )
 
 

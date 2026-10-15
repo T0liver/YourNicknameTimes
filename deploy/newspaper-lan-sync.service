@@ -1,0 +1,10 @@
+[Unit]
+Description=Write Caddy and nftables from the status port file
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=__ROOT__/.venv/bin/newspaper-lan-sync --data-dir __DATA__ --caddy /etc/caddy/Caddyfile --nft /etc/nftables.conf
+
+[Install]
+WantedBy=multi-user.target
