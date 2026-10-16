@@ -37,7 +37,7 @@ from newspaper.lan import write_status_port
 from newspaper.sources.almanac import collect_almanac
 from newspaper.sources.caldav_source import collect_caldav, connect as caldav_connect
 from newspaper.sources.daily import collect_daily
-from newspaper.sources.news import collect_news
+from newspaper.sources.news import collect_news, collect_pool
 from newspaper.sources.weather import collect_weather, coordinates
 from newspaper.worker import DropboxUploader, SystemCups, UploadError
 
@@ -709,12 +709,12 @@ def _run_test(group: str, settings: dict, conn, data_dir: Path, moment: datetime
     if group == "model":
         from newspaper.llm import apply_model
 
-        pool, _ = collect_news(load_feeds(conn), now=moment, keep_undated=False, light=False, get=get)
+        pool, _ = collect_pool(load_feeds(conn), now=moment, keep_undated=False, light=False, get=get)
         snapshot = {"meta": {}, "news": {"interest": [], "local": []}}
         apply_model(
             snapshot,
             settings,
-            pool[0],
+            pool,
             [],
             api_key=secrets.get("OPENROUTER_API_KEY", ""),
             light=False,

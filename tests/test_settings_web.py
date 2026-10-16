@@ -211,6 +211,53 @@ def test_schedule_rejects_bad_time(tmp_path):
     assert bad.status_code == 400
 
 
+def test_model_test_passes_the_full_news_pool(tmp_path, monkeypatch):
+    data = _prepare(tmp_path)
+    from newspaper.web import _write_secret
+
+    _write_secret(data / "secrets.env", "OPENROUTER_API_KEY", "sk-test")
+    sample_pool = [
+        {
+            "id": 1,
+            "category": "interest",
+            "title": "Headline",
+            "snippet": "snippet",
+            "published": None,
+            "feed": "Example",
+        }
+    ]
+    seen = {}
+
+    def fake_collect_news(feeds, **kwargs):
+        return sample_pool, {}
+
+    def fake_apply_model(snapshot, settings, pool, prep_items, **kwargs):
+        seen["pool"] = pool
+        snapshot["meta"]["mode"] = "on"
+
+    monkeypatch.setattr("newspaper.dashboard_settings.collect_pool", fake_collect_news)
+
+    import newspaper.llm as llm_module
+
+    monkeypatch.setattr(llm_module, "apply_model", fake_apply_model)
+
+    client = _login(data)
+    csrf = _csrf(client.get("/settings/model").text)
+    response = client.post(
+        "/settings/model/test",
+        data={
+            "csrf": csrf,
+            "model_on": "on",
+            "model_name": "openrouter/free",
+            "send_task_descriptions": "on",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    assert "notice=test_ok" in response.headers["location"]
+    assert seen["pool"] == sample_pool
+
+
 def test_opml_round_trip(tmp_path):
     data = _prepare(tmp_path)
     client = _login(data)
